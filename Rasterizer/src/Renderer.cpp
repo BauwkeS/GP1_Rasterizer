@@ -111,46 +111,65 @@ void Renderer::Render()
 	std::vector<Vector2> pixels;
 	std::vector<float> depthBuffer{90000000000000000.f};
 
+	constexpr int numVertices{ 3 };
+
+	const int numTriangles{ static_cast<int>(vertixesInScreenSpace.size()) / numVertices };
+
+	for (int triangleIndex{}; triangleIndex < numTriangles; triangleIndex++)
+	{
+		Vector3 vertexPos0{ vertixesInScreenSpace[triangleIndex * numVertices + 0].position };
+		Vector3 vertexPos1{ vertixesInScreenSpace[triangleIndex * numVertices + 1].position };
+		Vector3 vertexPos2{ vertixesInScreenSpace[triangleIndex * numVertices + 2].position };
+
+		const float minX{ std::min(vertexPos0.x, std::min(vertexPos1.x, vertexPos2.x)) };
+		const float maxX{ std::max(vertexPos0.x, std::max(vertexPos1.x, vertexPos2.x)) };
+
+		const float minY{ std::min(vertexPos0.y, std::min(vertexPos1.y, vertexPos2.y)) };
+		const float maxY{ std::max(vertexPos0.y, std::max(vertexPos1.y, vertexPos2.y)) };
+
+		const int indexOffset{ numVertices * triangleIndex };
+		const Vector3 side1{ vertixesInScreenSpace[indexOffset + 1].position - vertixesInScreenSpace[indexOffset].position };
+		const Vector3 side2{ vertixesInScreenSpace[indexOffset + 2].position - vertixesInScreenSpace[indexOffset].position };
+		const float totalTriangleArea{ Vector3::Cross(side1, side2).z * 0.5f };
+
 	//RENDER LOGIC
 	for (int px{}; px < m_Width; ++px)
 	{
 		for (int py{}; py < m_Height; ++py)
 		{
 			Vector3 pointP{ px + 0.5f, py + 0.5f,1.f };
-			
+
+			bool inTriangle{ true };
+			float currentDepth{};
 			ColorRGB barycentricColor{};
+			for (int vertexIndex{ 0 }; vertexIndex < numVertices; vertexIndex++)
+			{
+				const float crossResult{ Vector3::Cross(Vertex{vertixesInScreenSpace[(vertexIndex + 1) % numVertices + indexOffset]}.position
+					- Vertex{vertixesInScreenSpace[vertexIndex + indexOffset]}.position,
+					pointP - Vertex{vertixesInScreenSpace[vertexIndex + indexOffset]}.position).z };
 
-			//what is/can see triangle test 
-			//in barycentric coordinates
-			float signedAreaWeightV0{ Vector3::Cross(vertixesInScreenSpace[2].position - vertixesInScreenSpace[1].position, pointP - vertixesInScreenSpace[1].position).z };
-			float signedAreaWeightV1{ Vector3::Cross(vertixesInScreenSpace[1].position - vertixesInScreenSpace[0].position, pointP - vertixesInScreenSpace[0].position).z };
-			float signedAreaWeightV2{ Vector3::Cross(vertixesInScreenSpace[0].position - vertixesInScreenSpace[2].position, pointP - vertixesInScreenSpace[2].position).z };
-
-			float totalTriangleArea{ signedAreaWeightV0 + signedAreaWeightV1 + signedAreaWeightV2 };
-			
-			//if (totalTriangleArea == 1) finalColor = colors::Red;
-
-			if (signedAreaWeightV0 < 0 || signedAreaWeightV1 < 0 || signedAreaWeightV2 < 0) {
-				continue; //not in triangle
-			}
-			else {
-
-				if (signedAreaWeightV0 >= m_pDepthBufferPixels[px + (py * m_Width)]
-					|| signedAreaWeightV1 >= m_pDepthBufferPixels[px + (py * m_Width)]
-					|| signedAreaWeightV2 >= m_pDepthBufferPixels[px + (py * m_Width)])
+				if (crossResult < 0)
 				{
-					continue;
+					inTriangle = false;
+					break;
 				}
 
-				//m_pDepthBufferPixels[px + (py * m_Width)] = result.depth;
+				barycentricColor += vertixesInScreenSpace[((vertexIndex + 2) % numVertices + indexOffset)].color * ((crossResult * 0.5f) / totalTriangleArea);
+				currentDepth += vertixesInScreenSpace[((vertexIndex + 2) % numVertices + indexOffset)].position.z * ((crossResult * 0.5f) / totalTriangleArea);
+			}
 
-				//calculating the final weights:
-				float finalSignedAreaWeightV0{ signedAreaWeightV0 / totalTriangleArea };
-				float finalSignedAreaWeightV1{ signedAreaWeightV1 / totalTriangleArea };
-				float finalSignedAreaWeightV2{ signedAreaWeightV2 / totalTriangleArea };
+			if (!inTriangle)
+				continue;
 
-				//interpolated color:
-				barycentricColor += vertixesInScreenSpace[0].color * finalSignedAreaWeightV0 + vertixesInScreenSpace[1].color * finalSignedAreaWeightV1 + vertixesInScreenSpace[2].color * finalSignedAreaWeightV2;
+			const int depthBufferIndex{ px + (py * m_Width) };
+
+			if (m_pDepthBufferPixels[depthBufferIndex] >= currentDepth)
+			{
+				m_pDepthBufferPixels[depthBufferIndex] = currentDepth;
+
+				//Update Color in Buffer
+				finalColor = barycentricColor;
+				finalColor.MaxToOne();
 
 				m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
 					static_cast<uint8_t>(finalColor.r * 255),
@@ -158,22 +177,7 @@ void Renderer::Render()
 					static_cast<uint8_t>(finalColor.b * 255));
 			}
 
-
-			//---------------
-
-			/*float gradient = px / static_cast<float>(m_Width);
-			gradient += py / static_cast<float>(m_Width);
-			gradient /= 2.0f;*/
-
-			finalColor = barycentricColor;
-
-			//Update Color in Buffer
-			finalColor.MaxToOne();
-
-			m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
-				static_cast<uint8_t>(finalColor.r * 255),
-				static_cast<uint8_t>(finalColor.g * 255),
-				static_cast<uint8_t>(finalColor.b * 255));
+		}
 		}
 	}
 
