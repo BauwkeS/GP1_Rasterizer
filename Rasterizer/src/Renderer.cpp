@@ -24,33 +24,38 @@ std::vector<Vertex> Renderer::ConvertToScreenSpaceVertex(const std::vector<Verte
 void Renderer::vertextTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const {
 	//define triangle
 	std::vector<Vertex> verticesWorld{
+		{{  0.f,2.f, 0.f }, {1, 0, 0}},
+		{{  1.5f, -1.f, 0.f }, {1, 0, 0}},
+		{{ -1.5f, -1.f, 0.f }, {1, 0, 0}},
+
 		{{0.f,4.f,2.f},{1,0,0}},
 		{{3.f,-2.f,2.f},{0,1,0}},
 		{{-3.f,-2.f,2.f},{0,0,1}},
 	};
-
-	Matrix ViewMatrix{ m_Camera.CalculateCameraToWorld() };
-	ViewMatrix.Inverse();
 	
-	for (int i = 0; i < verticesWorld.size(); i++)
+	size_t vecSize{ verticesWorld.size() };
+	vertices_out.resize(vecSize);
+
+	float aspectRatio{ m_Width / float(m_Height) };
+	for (size_t i{}; i < vecSize; ++i)
 	{
-		Vector3 viewSpacePoint = ViewMatrix.TransformPoint(verticesWorld[i].position);
+		Matrix ViewMatrix{ m_Camera.CalculateCameraToWorld() };
+		ViewMatrix.Inverse();
+		Vector3 projectedPos = ViewMatrix.TransformPoint(verticesWorld[i].position);
+		projectedPos *= Vector3{ 1 / projectedPos.z, 1 / projectedPos.z, 1 }; //i didn't implement a /= for with a vec so take this :)
+		projectedPos.x = projectedPos.x / (aspectRatio * m_Camera.fov);
+		projectedPos.y = projectedPos.y / (m_Camera.fov);
 
-		float projectedVertexX = viewSpacePoint.x / viewSpacePoint.z;
-		float projectedVertexY = viewSpacePoint.y / viewSpacePoint.z;
+		projectedPos.x = (projectedPos.x + 1) * 0.5f * m_Width;
+		projectedPos.y = (1 - projectedPos.y) * 0.5f * m_Height;
+		projectedPos.z = projectedPos.z + 1;
 
-		float projectedVertexWithcameraX = projectedVertexX / (m_Width / m_Height * m_Camera.fov);
-		float projectedVertexWithcameraY = projectedVertexY / m_Camera.fov;
+		//vertices_out[i].position.x = (projectedPos.x + 1) * 0.5f * m_Width;
+		//vertices_out[i].position.y = (1 - projectedPos.y) * 0.5f * m_Height;
+		//vertices_out[i].position.z = projectedPos.z + 1;
 
-		vertices_out.push_back(Vertex{ Vector3(projectedVertexWithcameraX, projectedVertexWithcameraY, 1.f), { verticesWorld[i].color } });
-	}
-
-	std::vector<Vertex> screenSpaceVertex = ConvertToScreenSpaceVertex(vertices_out);
-	vertices_out.clear();
-
-	for (int i = 0; i < screenSpaceVertex.size(); i++)
-	{
-		vertices_out.push_back(Vertex{ Vector3(screenSpaceVertex[i].position.x, screenSpaceVertex[i].position.y, screenSpaceVertex[i].position.z), { screenSpaceVertex[i].color } });
+		vertices_out[i].position = projectedPos;
+		vertices_out[i].color = verticesWorld[i].color;
 	}
 }
 
@@ -65,17 +70,10 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_pBackBuffer = SDL_CreateRGBSurface(0, m_Width, m_Height, 32, 0, 0, 0, 0);
 	m_pBackBufferPixels = (uint32_t*)m_pBackBuffer->pixels;
 
-	//m_pDepthBufferPixels = new float[m_Width * m_Height];
+	m_pDepthBufferPixels = new float[m_Width * m_Height];
 
 	//Initialize Camera
 	m_Camera.Initialize(60.f, { .0f,.0f,-10.f });
-
-	//Create Buffers
-	m_pFrontBuffer = SDL_GetWindowSurface(pWindow);
-	m_pBackBuffer = SDL_CreateRGBSurface(0, m_Width, m_Height, 32, 0, 0, 0, 0);
-	m_pBackBufferPixels = (uint32_t*)m_pBackBuffer->pixels;
-
-	m_pDepthBufferPixels = new float[m_Width * m_Height];
 }
 
 Renderer::~Renderer()
@@ -94,15 +92,8 @@ void Renderer::Render()
 	//Lock BackBuffer
 	SDL_LockSurface(m_pBackBuffer);
 	ColorRGB finalColor{};
-	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, FLT_MAX); //set depth to max for all pixels
-	SDL_FillRect(m_pBackBuffer, &m_pBackBuffer->clip_rect, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
+	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, std::numeric_limits<float>::max());
 
-	//add those points here
-	//std::vector<Vector3> vertices_ndc{
-	//	{0.f,0.5f,1.f},
-	//	{.5f,-.5f,1.f},
-	//	{-.5f,-.5f,1.f},
-	//};
 	std::vector<Vertex> vertixesInScreenSpace{};
 
 	vertextTransformationFunction({}, vertixesInScreenSpace);
@@ -128,20 +119,29 @@ void Renderer::Render()
 		const float maxY{ std::max(vertexPos0.y, std::max(vertexPos1.y, vertexPos2.y)) };
 
 		const int indexOffset{ numVertices * triangleIndex };
-		const Vector3 side1{ vertixesInScreenSpace[indexOffset + 1].position - vertixesInScreenSpace[indexOffset].position };
-		const Vector3 side2{ vertixesInScreenSpace[indexOffset + 2].position - vertixesInScreenSpace[indexOffset].position };
-		const float totalTriangleArea{ Vector3::Cross(side1, side2).z * 0.5f };
+		const float totalTriangleArea{ Vector3::Cross(
+			Vector3(vertixesInScreenSpace[indexOffset + 1].position - vertixesInScreenSpace[indexOffset].position),
+			Vector3(vertixesInScreenSpace[indexOffset + 2].position - vertixesInScreenSpace[indexOffset].position)
+			).z * 0.5f};
 
 	//RENDER LOGIC
 	for (int px{}; px < m_Width; ++px)
 	{
 		for (int py{}; py < m_Height; ++py)
 		{
-			Vector3 pointP{ px + 0.5f, py + 0.5f,1.f };
+			const Vector3 pointP{ px + 0.5f, py + 0.5f,1.f };
+
+			if (pointP.x < minX || pointP.x > maxX ||
+				pointP.y < minY || pointP.y > maxY)
+			{
+				continue;
+			}
+
 
 			bool inTriangle{ true };
 			float currentDepth{};
 			ColorRGB barycentricColor{};
+
 			for (int vertexIndex{ 0 }; vertexIndex < numVertices; vertexIndex++)
 			{
 				const float crossResult{ Vector3::Cross(Vertex{vertixesInScreenSpace[(vertexIndex + 1) % numVertices + indexOffset]}.position
