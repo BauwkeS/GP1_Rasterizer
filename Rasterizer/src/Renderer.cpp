@@ -93,6 +93,7 @@ void Renderer::Render()
 	SDL_LockSurface(m_pBackBuffer);
 	ColorRGB finalColor{};
 	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, std::numeric_limits<float>::max());
+	SDL_FillRect(m_pBackBuffer, &m_pBackBuffer->clip_rect, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
 
 	std::vector<Vertex> vertixesInScreenSpace{};
 
