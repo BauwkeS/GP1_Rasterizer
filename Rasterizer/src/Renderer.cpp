@@ -69,11 +69,18 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	//Initialize Camera
 	m_Camera.Initialize(60.f, { .0f,.0f,-10.f });
+
+	//Create Buffers
+	m_pFrontBuffer = SDL_GetWindowSurface(pWindow);
+	m_pBackBuffer = SDL_CreateRGBSurface(0, m_Width, m_Height, 32, 0, 0, 0, 0);
+	m_pBackBufferPixels = (uint32_t*)m_pBackBuffer->pixels;
+
+	m_pDepthBufferPixels = new float[m_Width * m_Height];
 }
 
 Renderer::~Renderer()
 {
-	//delete[] m_pDepthBufferPixels;
+	delete[] m_pDepthBufferPixels;
 }
 
 void Renderer::Update(Timer* pTimer)
@@ -87,7 +94,7 @@ void Renderer::Render()
 	//Lock BackBuffer
 	SDL_LockSurface(m_pBackBuffer);
 	ColorRGB finalColor{};
-	//std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, FLT_MAX); //set depth to max for all pixels
+	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, FLT_MAX); //set depth to max for all pixels
 	SDL_FillRect(m_pBackBuffer, &m_pBackBuffer->clip_rect, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
 
 	//add those points here
@@ -102,6 +109,7 @@ void Renderer::Render()
 
 
 	std::vector<Vector2> pixels;
+	std::vector<float> depthBuffer{90000000000000000.f};
 
 	//RENDER LOGIC
 	for (int px{}; px < m_Width; ++px)
@@ -113,26 +121,6 @@ void Renderer::Render()
 			ColorRGB barycentricColor{};
 
 			//what is/can see triangle test 
-
-			//float signedArea1{ Vector3::Cross(pointP - vertixesInScreenSpace[0].position,vertixesInScreenSpace[0].position - vertixesInScreenSpace[1].position).z };
-			//float signedArea2{ Vector3::Cross(pointP - vertixesInScreenSpace[1].position,vertixesInScreenSpace[1].position - vertixesInScreenSpace[2].position).z };
-			//float signedArea3{ Vector3::Cross(pointP - vertixesInScreenSpace[2].position,vertixesInScreenSpace[2].position - vertixesInScreenSpace[0].position).z };
-			//float totalTriangleArea{ signedArea1 + signedArea2 + signedArea3 };
-
-			//if (signedArea1 < 0 || signedArea2 < 0 || signedArea3 < 0) {
-			//	continue; //not in triangle
-			//} 
-			//else {
-			//	//is in triangle
-			//	//calculating the final weights:
-			//	float finalSignedArea1{ signedArea1 / totalTriangleArea };
-			//	float finalSignedArea2{ signedArea2 / totalTriangleArea };
-			//	float finalSignedArea3{ signedArea3 / totalTriangleArea };
-
-			//	//interpolated color:
-			//	finalColor = vertixesInScreenSpace[0].color * finalSignedArea1 + vertixesInScreenSpace[1].color * finalSignedArea2 + vertixesInScreenSpace[2].color * finalSignedArea3;
-			//}
-
 			//in barycentric coordinates
 			float signedAreaWeightV0{ Vector3::Cross(vertixesInScreenSpace[2].position - vertixesInScreenSpace[1].position, pointP - vertixesInScreenSpace[1].position).z };
 			float signedAreaWeightV1{ Vector3::Cross(vertixesInScreenSpace[1].position - vertixesInScreenSpace[0].position, pointP - vertixesInScreenSpace[0].position).z };
@@ -146,17 +134,29 @@ void Renderer::Render()
 				continue; //not in triangle
 			}
 			else {
-				//is in triangle
-					}
 
-			//calculating the final weights:
-			float finalSignedAreaWeightV0{ signedAreaWeightV0 / totalTriangleArea };
-			float finalSignedAreaWeightV1{ signedAreaWeightV1 / totalTriangleArea };
-			float finalSignedAreaWeightV2{ signedAreaWeightV2 / totalTriangleArea };
+				if (signedAreaWeightV0 >= m_pDepthBufferPixels[px + (py * m_Width)]
+					|| signedAreaWeightV1 >= m_pDepthBufferPixels[px + (py * m_Width)]
+					|| signedAreaWeightV2 >= m_pDepthBufferPixels[px + (py * m_Width)])
+				{
+					continue;
+				}
 
-			//interpolated color:
-			barycentricColor += vertixesInScreenSpace[0].color * finalSignedAreaWeightV0 + vertixesInScreenSpace[1].color * finalSignedAreaWeightV1 + vertixesInScreenSpace[2].color * finalSignedAreaWeightV2;
+				//m_pDepthBufferPixels[px + (py * m_Width)] = result.depth;
 
+				//calculating the final weights:
+				float finalSignedAreaWeightV0{ signedAreaWeightV0 / totalTriangleArea };
+				float finalSignedAreaWeightV1{ signedAreaWeightV1 / totalTriangleArea };
+				float finalSignedAreaWeightV2{ signedAreaWeightV2 / totalTriangleArea };
+
+				//interpolated color:
+				barycentricColor += vertixesInScreenSpace[0].color * finalSignedAreaWeightV0 + vertixesInScreenSpace[1].color * finalSignedAreaWeightV1 + vertixesInScreenSpace[2].color * finalSignedAreaWeightV2;
+
+				m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
+					static_cast<uint8_t>(finalColor.r * 255),
+					static_cast<uint8_t>(finalColor.g * 255),
+					static_cast<uint8_t>(finalColor.b * 255));
+			}
 
 
 			//---------------
