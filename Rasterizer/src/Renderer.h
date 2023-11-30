@@ -33,7 +33,7 @@ namespace dae
 		bool SaveBufferToImage() const;
 
 		void VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const;
-		std::vector<Vector2> ConvertToScreenSpaceVertex(const std::vector<Vertex>& vector) const;
+		std::vector<Vertex> ConvertToScreenSpaceVertex(const std::vector<Vertex>& vector) const;
 		void vertextTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const;
 
 	private:
