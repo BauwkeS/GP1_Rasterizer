@@ -148,6 +148,15 @@ namespace dae {
 		return *this;
 	}
 
+	Vector3& Vector3::operator*=(const Vector3& v)
+	{
+		x *= v.x;
+		y *= v.y;
+		z *= v.z;
+
+		return *this;
+	}
+
 	float& Vector3::operator[](int index)
 	{
 		assert(index <= 2 && index >= 0);

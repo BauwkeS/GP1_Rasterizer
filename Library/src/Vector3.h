@@ -48,6 +48,8 @@ namespace dae
 
 		bool operator==(const Vector3& v) const;
 
+		Vector3& operator*=(const Vector3& v);
+
 		static const Vector3 UnitX;
 		static const Vector3 UnitY;
 		static const Vector3 UnitZ;
