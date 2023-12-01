@@ -25,15 +25,17 @@ void Renderer::vertextTransformationFunction(const std::vector<Vertex>& vertices
 	//define triangles 
 	std::vector<Vertex> verticesWorld{
 		//red one
-		{{  0.f,2.f, 0.f }, {1, 0, 0}},
-		{{  1.5f, -1.f, 0.f }, {1, 0, 0}},
-		{{ -1.5f, -1.f, 0.f }, {1, 0, 0}},
-
-		//original one
-		{{0.f,4.f,2.f},{1,0,0}},
-		{{3.f,-2.f,2.f},{0,1,0}},
-		{{-3.f,-2.f,2.f},{0,0,1}},
+		Vertex{{-3,  3, -2},  {1, 1, 1}},
+			Vertex{{ 0,  3, -2},  {1, 1, 1}},
+			Vertex{{ 3,  3, -2},  {1, 1, 1}},
+			Vertex{{-3,  0, -2},  {1, 1, 1}},
+			Vertex{{ 0,  0, -2},  {1, 1, 1}},
+			Vertex{{ 3,  0, -2},  {1, 1, 1}},
+			Vertex{{-3, -3, -2},  {1, 1, 1}},
+			Vertex{{ 0, -3, -2},  {1, 1, 1}},
+			Vertex{{ 3, -3, -2},  {1, 1, 1}}
 	};
+
 	
 	size_t vecSize{ verticesWorld.size() };
 	vertices_out.resize(vecSize);
@@ -58,6 +60,7 @@ void Renderer::vertextTransformationFunction(const std::vector<Vertex>& vertices
 
 		vertices_out[i].position = transformedPoint;
 		vertices_out[i].color = verticesWorld[i].color;
+		//vertices_out[i].color = colors::White;
 	}
 }
 
@@ -77,49 +80,35 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	//Initialize Camera
 	m_Camera.Initialize(60.f, { .0f,.0f,-10.f });
 
-	//triangle list
-	std::vector<Mesh> meshes_world = {
+	m_MeshesWorld = {
 		Mesh {
 		{
-			Vertex{{-3,  3, -2}},
-			Vertex{{ 0,  3, -2}},
-			Vertex{{ 3,  3, -2}},
-			Vertex{{-3,  0, -2}},
-			Vertex{{ 0,  0, -2}},
-			Vertex{{ 3,  0, -2}},
-			Vertex{{-3, -3, -2}},
-			Vertex{{ 0, -3, -2}},
-			Vertex{{ 3, -3, -2}}
+			Vertex{{-3,  3, -2},  {1, 1, 1}},
+			Vertex{{ 0,  3, -2},  {1, 1, 1}},
+			Vertex{{ 3,  3, -2},  {1, 1, 1}},
+			Vertex{{-3,  0, -2},  {1, 1, 1}},
+			Vertex{{ 0,  0, -2},  {1, 1, 1}},
+			Vertex{{ 3,  0, -2},  {1, 1, 1}},
+			Vertex{{-3, -3, -2},  {1, 1, 1}},
+			Vertex{{ 0, -3, -2},  {1, 1, 1}},
+			Vertex{{ 3, -3, -2},  {1, 1, 1}}
 		},
+		//triangle list
 		{
 			3, 0, 1,    1, 4, 3,    4, 1, 2,
 			2, 5, 4,    6, 3, 4,    4, 7, 6,
 			7, 4, 5,    5, 8, 7
 		},
 		PrimitiveTopology::TriangleList}
-	};
-
-	///triangle strip
-	std::vector<Mesh> meshes_world = {
-		Mesh {
-		{
-			Vertex{{-3,  3, -2}},
-			Vertex{{ 0,  3, -2}},
-			Vertex{{ 3,  3, -2}},
-			Vertex{{-3,  0, -2}},
-			Vertex{{ 0,  0, -2}},
-			Vertex{{ 3,  0, -2}},
-			Vertex{{-3, -3, -2}},
-			Vertex{{ 0, -3, -2}},
-			Vertex{{ 3, -3, -2}}
-		},
-		{
+		//triangle strip
+		/*{
 			3, 0, 4, 1, 5, 2,
 			2, 6,
 			6, 3, 7, 4, 8, 5
 		},
-		PrimitiveTopology::TriangleList}
+		PrimitiveTopology::TriangleList}*/
 	};
+
 }
 
 Renderer::~Renderer()
@@ -141,9 +130,9 @@ void Renderer::Render()
 	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, std::numeric_limits<float>::max()); //buffer
 	SDL_FillRect(m_pBackBuffer, &m_pBackBuffer->clip_rect, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100)); //clear screen
 
-	std::vector<Vertex> vertixesInScreenSpace{};
-	vertextTransformationFunction({}, vertixesInScreenSpace);
-
+	std::vector<Vertex> vertixesInScreenSpace(m_MeshesWorld.vertices.size());
+	vertextTransformationFunction(m_MeshesWorld.vertices, vertixesInScreenSpace);
+	 
 	//the points a -> atm triangle has
 	constexpr int numVertices{ 3 };
 

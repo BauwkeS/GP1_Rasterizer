@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Camera.h"
+#include "DataTypes.h"
 
 struct SDL_Window;
 struct SDL_Surface;
@@ -49,5 +50,8 @@ namespace dae
 
 		int m_Width{};
 		int m_Height{};
+
+		Mesh m_MeshesWorld{};
+		Mesh m_MeshesWorld2{};
 	};
 }
