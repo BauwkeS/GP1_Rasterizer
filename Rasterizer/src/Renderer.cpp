@@ -76,6 +76,50 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	//Initialize Camera
 	m_Camera.Initialize(60.f, { .0f,.0f,-10.f });
+
+	//triangle list
+	std::vector<Mesh> meshes_world = {
+		Mesh {
+		{
+			Vertex{{-3,  3, -2}},
+			Vertex{{ 0,  3, -2}},
+			Vertex{{ 3,  3, -2}},
+			Vertex{{-3,  0, -2}},
+			Vertex{{ 0,  0, -2}},
+			Vertex{{ 3,  0, -2}},
+			Vertex{{-3, -3, -2}},
+			Vertex{{ 0, -3, -2}},
+			Vertex{{ 3, -3, -2}}
+		},
+		{
+			3, 0, 1,    1, 4, 3,    4, 1, 2,
+			2, 5, 4,    6, 3, 4,    4, 7, 6,
+			7, 4, 5,    5, 8, 7
+		},
+		PrimitiveTopology::TriangleList}
+	};
+
+	///triangle strip
+	std::vector<Mesh> meshes_world = {
+		Mesh {
+		{
+			Vertex{{-3,  3, -2}},
+			Vertex{{ 0,  3, -2}},
+			Vertex{{ 3,  3, -2}},
+			Vertex{{-3,  0, -2}},
+			Vertex{{ 0,  0, -2}},
+			Vertex{{ 3,  0, -2}},
+			Vertex{{-3, -3, -2}},
+			Vertex{{ 0, -3, -2}},
+			Vertex{{ 3, -3, -2}}
+		},
+		{
+			3, 0, 4, 1, 5, 2,
+			2, 6,
+			6, 3, 7, 4, 8, 5
+		},
+		PrimitiveTopology::TriangleList}
+	};
 }
 
 Renderer::~Renderer()
