@@ -15,44 +15,29 @@ namespace dae
 	{
 		Camera() = default;
 
-		Camera(const Vector3& _origin, float _fovAngle):
-			origin{_origin},
-			fovAngle{_fovAngle}
+		Camera(const Vector3& _origin, float _fovAngle) :
+			origin{ _origin },
+			fovAngle{ _fovAngle }
 		{
 		}
 
 
 		Vector3 origin{};
-		float fovAngle{90.f};
+		const float movementMouseSpeed{ 5.f };
+		const float movementKeySpeed{ 0.5f };
+		float fovAngle{ 90.f };
 		float fov{ tanf((fovAngle * TO_RADIANS) / 2.f) };
 
-		mutable Vector3 forward{Vector3::UnitZ};
-		mutable Vector3 up{Vector3::UnitY};
-		mutable Vector3 right{Vector3::UnitX};
-		const float movementMouseSpeed{5.f};
-		const float movementKeySpeed{5.f};
+		Vector3 forward{ Vector3::UnitZ };
+		Vector3 up{ Vector3::UnitY };
+		Vector3 right{ Vector3::UnitX };
 
-		float totalPitch{0.f};
-		float totalYaw{0.f};
+		float totalPitch{};
+		float totalYaw{};
 
-	/*	Matrix cameraToWorld{};
-		Matrix viewMatrix{};*/
+		Matrix invViewMatrix{};
+		Matrix viewMatrix{};
 
-		Matrix CalculateCameraToWorld() const
-		{
-			//todo: W2
-			right = Vector3::Cross(Vector3::UnitY, forward).Normalized();
-			up = Vector3::Cross(forward,right).Normalized();
-
-
-			return {
-			{right,0},
-			{up,0},
-			{forward,0},
-				{origin,1}
-			
-			};
-		}
 		void Initialize(float _fovAngle = 90.f, Vector3 _origin = { 0.f,0.f,0.f })
 		{
 			fovAngle = _fovAngle;
@@ -60,9 +45,15 @@ namespace dae
 
 			origin = _origin;
 		}
+
 		void CalculateViewMatrix()
 		{
 			//TODO W1
+			right = Vector3::Cross(Vector3::UnitY, forward).Normalized();
+			up = Vector3::Cross(forward, right).Normalized();
+
+			viewMatrix = Matrix{ {right,0},{up,0},{forward,0},{origin,1} }.Inverse();
+
 			//ONB => invViewMatrix
 			//Inverse(ONB) => ViewMatrix
 
@@ -123,7 +114,7 @@ namespace dae
 				origin.x += (mouseY * forward.x) * deltaTime * movementMouseSpeed;
 				origin.z += (mouseY * forward.z) * deltaTime * movementMouseSpeed;
 			}
-			if (mouseState == SDL_BUTTON_X2) {
+			if (mouseState == SDL_BUTTON_X2) {	
 				//5
 				origin.y += (mouseY * up.y) * deltaTime * movementMouseSpeed;
 			}
@@ -134,6 +125,11 @@ namespace dae
 			forward.Normalize();
 			right = rotationMatrix.TransformVector(Vector3::UnitX);
 			right.Normalize();
+
+			CalculateViewMatrix();
+			CalculateProjectionMatrix();
 		}
+		
+
 	};
 }

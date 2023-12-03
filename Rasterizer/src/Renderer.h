@@ -16,6 +16,15 @@ namespace dae
 	struct Vertex;
 	class Timer;
 	class Scene;
+	struct Vertex_Out;
+
+	struct BoundingBox
+	{
+		int left;
+		int bottom;
+		int right;
+		int top;
+	};
 
 	class Renderer final
 	{
@@ -34,8 +43,11 @@ namespace dae
 		bool SaveBufferToImage() const;
 
 		void VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const;
+		void VertexTransformationFunction(std::vector<Mesh>& meshes_World) const;
+		Vertex_Out VertexTransformationSingular(const dae::Vertex& vertexIn) const;
 		std::vector<Vertex> ConvertToScreenSpaceVertex(const std::vector<Vertex>& vector) const;
-		void vertextTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const;
+		void RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, const std::vector<Vertex_Out>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const;
+		void RenderItems(const std::vector<Vertex_Out>& vertixesInScreenSpace);
 
 	private:
 		SDL_Window* m_pWindow{};
@@ -51,7 +63,11 @@ namespace dae
 		int m_Width{};
 		int m_Height{};
 
-		Mesh m_MeshesWorld{};
-		Mesh m_MeshesWorld2{};
+		std::vector<Mesh> m_MeshesWorld{};
+		//Mesh m_MeshesWorld2{};	
+
+		float m_AspectRatio{};
+
+		const int m_NumVertices{ 3 };
 	};
 }
