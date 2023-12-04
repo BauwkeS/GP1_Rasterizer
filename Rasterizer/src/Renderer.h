@@ -44,11 +44,18 @@ namespace dae
 
 		void VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const;
 		void VertexTransformationFunction(std::vector<Mesh>& meshes_World) const;
+		void VertexTransformationFunctionList(Mesh& mesh) const;
+		void VertexTransformationFunctionStrip(Mesh& mesh) const;
 		Vertex_Out VertexTransformationSingular(const dae::Vertex& vertexIn) const;
 		std::vector<Vertex> ConvertToScreenSpaceVertex(const std::vector<Vertex>& vector) const;
-		void RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, const std::vector<Vertex_Out>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const;
-		void RenderItems(const std::vector<Vertex_Out>& vertixesInScreenSpace);
+		void RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, std::vector<Vertex_Out>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const;
+		void RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, std::vector<Vertex_Out*>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const;
+		void RenderItems(std::vector<Vertex_Out>& vertixesInScreenSpace);
+		void RenderItemsStrip(Mesh& mesh);	
 
+		void MakeBoundingBox(std::vector<Vertex_Out>& vertixesInScreenSpace, int& indexOffset, BoundingBox& boudingBox, int& boundingBoxWidth, int& boundingBoxHeight);
+		void MakeBoundingBox(std::vector<Vertex_Out*>& vertixesInScreenSpace, int& indexOffset, BoundingBox& boudingBox, int& boundingBoxWidth, int& boundingBoxHeight);
+		
 	private:
 		SDL_Window* m_pWindow{};
 
@@ -64,6 +71,7 @@ namespace dae
 		int m_Height{};
 
 		std::vector<Mesh> m_MeshesWorld{};
+		std::vector<Vertex_Out*> m_ListVertices;
 		//Mesh m_MeshesWorld2{};	
 
 		float m_AspectRatio{};
