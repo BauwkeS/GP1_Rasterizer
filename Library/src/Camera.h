@@ -106,7 +106,7 @@ namespace dae
 			if (mouseState == SDL_BUTTON_RMASK) {
 				//1 & 2
 				totalYaw += mouseX*deltaTime*movementMouseSpeed;
-				totalPitch += mouseY*deltaTime*movementMouseSpeed;
+				totalPitch -= mouseY*deltaTime*movementMouseSpeed;
 			}
 			if (mouseState == SDL_BUTTON_LEFT) {
 				//3 & 4
