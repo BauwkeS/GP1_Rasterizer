@@ -77,5 +77,7 @@ namespace dae
 		float m_AspectRatio{};
 
 		const int m_NumVertices{ 3 };
+
+		Texture* mp_Texture{};
 	};
 }

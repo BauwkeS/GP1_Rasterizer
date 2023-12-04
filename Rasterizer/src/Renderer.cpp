@@ -191,11 +191,14 @@ Renderer::Renderer(SDL_Window* pWindow) :
 		PrimitiveTopology::TriangleStrip}
 	};
 
+
+	mp_Texture = Texture::LoadFromFile("C:/Users/bauwk/Documents/SCHOOL/GRAPHICSPROGRAMMING/GP1_Rasterizer/Rasterizer/Resources/uv_grid_2.png");
 }
 
 Renderer::~Renderer()
 {
 	delete[] m_pDepthBufferPixels;
+	//delete mp_Texture;
 }
 
 void Renderer::Update(Timer* pTimer)
