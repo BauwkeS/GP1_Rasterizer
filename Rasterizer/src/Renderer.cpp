@@ -135,7 +135,7 @@ Vertex_Out dae::Renderer::VertexTransformationSingular(const dae::Vertex& vertex
 
 	vec.x = ((vec.x + 1) / 2) * m_Width;
 	vec.y = ((1 - vec.y) / 2) * m_Height;
-	return Vertex_Out{ vec,vertexIn.color };
+	return Vertex_Out{ vec,vertexIn.color,vertexIn.uv };
 }
 
 Renderer::Renderer(SDL_Window* pWindow) :
@@ -198,7 +198,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 Renderer::~Renderer()
 {
 	delete[] m_pDepthBufferPixels;
-	//delete mp_Texture;
+	delete mp_Texture;
 }
 
 void Renderer::Update(Timer* pTimer)
@@ -513,80 +513,19 @@ void dae::Renderer::RenderItems(std::vector<Vertex_Out>& vertixesInScreenSpace)
 
 void Renderer::RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, std::vector<Vertex_Out>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const
 {
-	ColorRGB barycentricColor{}; //color to put on triangle
-	bool inTriangle{ true }; //you finally made the bool to easy check
-	float currentDepth{}; //to check with buffer
-	//RENDER LOGIC
-	//for (int px{ boundingBox.left }; px < boundingBox.right; ++px)
-	//{
-	//	if (px < 0) continue;
-
-	//	for (int py{ boundingBox.bottom }; py < boundingBox.top; ++py)
-	//	{
-	int px{ boundingBox.left + (int(pixelIdx) / boundingBoxHeight) };
-	int py{ boundingBox.bottom + (int(pixelIdx) % boundingBoxHeight) };
-			const Vector3 pointP{ px + 0.5f, py + 0.5f,1.f };
-
-			/*if (pointP.x < minX || pointP.x > maxX ||
-			pointP.y < minY || pointP.y > maxY)
-			{
-			continue;
-			}*/
-
-			for (int vertexIndex{ 0 }; vertexIndex < numVertices; vertexIndex++)
-			{
-				//calculate if you are inside the triangle you are making
-				const float crossResult{ Vector3::Cross(
-					Vector3{ vertixesInScreenSpace[((vertexIndex + 1) % numVertices) + indexOffset].position }
-					- Vector3{ vertixesInScreenSpace[vertexIndex + indexOffset].position },	
-
-					pointP -  vertixesInScreenSpace[vertexIndex + indexOffset].position)
-					.z };
-
-				if (crossResult < 0)
-				{
-					inTriangle = false;
-					break;
-				}
-
-				//add color and depth to the pixel
-				barycentricColor += vertixesInScreenSpace[((vertexIndex + 2) % numVertices + indexOffset)].color * ((crossResult * 0.5f) / totalTriangleArea);
-				//barycentricColor += colors::White;
-				currentDepth += vertixesInScreenSpace[((vertexIndex + 2) % numVertices + indexOffset)].position.z * ((crossResult * 0.5f) / totalTriangleArea);
-				//std::cout << "hello?\n";
-
-				
-			}
-			if (inTriangle) {
-
-				int pixelIdx{ (px * m_Height) + py };
-
-				if (m_pDepthBufferPixels[pixelIdx] >= currentDepth)
-				{
-					m_pDepthBufferPixels[pixelIdx] = currentDepth;
-
-					barycentricColor.MaxToOne();
-
-					m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pFrontBuffer->format,
-						static_cast<uint8_t>(barycentricColor.r * 255),
-						static_cast<uint8_t>(barycentricColor.g * 255),
-						static_cast<uint8_t>(barycentricColor.b * 255));
-				}
-			}
-
-			/*	if (!inTriangle)
-				continue;*/
-
-			
-
-	//	}
-	//}
+	std::vector<Vertex_Out*> vertixesInScreenSpaceNew{};
+	for (int i = 0; i < vertixesInScreenSpace.size(); i++)
+	{
+		vertixesInScreenSpaceNew.push_back(&vertixesInScreenSpace[i]);
+	}
+	RenderFunction(pixelIdx, boundingBox, boundingBoxHeight, numVertices, vertixesInScreenSpaceNew, indexOffset, totalTriangleArea);
 }
 void Renderer::RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, std::vector<Vertex_Out*>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const
 {
 	ColorRGB barycentricColor{}; //color to put on triangle
 	bool inTriangle{ true }; //you finally made the bool to easy check
 	float currentDepth{}; //to check with buffer
+	Vector2 uvTexture{}; //uv to give pos to -> to give to texture to know which color it is
 	//RENDER LOGIC
 	//for (int px{ boundingBox.left }; px < boundingBox.right; ++px)
 	//{
@@ -622,13 +561,15 @@ void Renderer::RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int b
 
 		//add color and depth to the pixel
 		barycentricColor += vertixesInScreenSpace[((vertexIndex + 2) % numVertices + indexOffset)]->color * ((crossResult * 0.5f) / totalTriangleArea);
-		//barycentricColor += colors::White;
-		currentDepth += vertixesInScreenSpace[((vertexIndex + 2) % numVertices + indexOffset)]->position.z * ((crossResult * 0.5f) / totalTriangleArea);
+		currentDepth += 1/ vertixesInScreenSpace[((vertexIndex + 2) % numVertices + indexOffset)]->position.z * ((crossResult * 0.5f) / totalTriangleArea);
 		//std::cout << "hello?\n";
-
+		uvTexture += (vertixesInScreenSpace[((vertexIndex + 2) % numVertices)]->uv / vertixesInScreenSpace[((vertexIndex + 2) % numVertices)]->position.z) * ((crossResult * 0.5f) / totalTriangleArea);
 
 	}
 	if (inTriangle) {
+
+		currentDepth = 1 / currentDepth;
+		uvTexture *= currentDepth;
 
 		int pixelIdx{ (px * m_Height) + py };
 
@@ -636,6 +577,7 @@ void Renderer::RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int b
 		{
 			m_pDepthBufferPixels[pixelIdx] = currentDepth;
 
+			barycentricColor = mp_Texture->Sample(uvTexture);
 			barycentricColor.MaxToOne();
 
 			m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pFrontBuffer->format,

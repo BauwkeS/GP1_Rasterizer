@@ -1,5 +1,6 @@
 #include "Texture.h"
 #include "Vector2.h"
+#include <cassert>
 #include <SDL_image.h>
 
 namespace dae
@@ -12,7 +13,7 @@ namespace dae
 
 	Texture::~Texture()
 	{
-		if (m_pSurface)
+		if (m_pSurface)	
 		{
 			SDL_FreeSurface(m_pSurface);
 			m_pSurface = nullptr;
@@ -26,11 +27,9 @@ namespace dae
 		//Create & Return a new Texture Object (using SDL_Surface)
 		SDL_Surface* newSurfaceFromFile{ IMG_Load(path.c_str()) };
 		
-		if (newSurfaceFromFile == nullptr) return nullptr;
+		if (newSurfaceFromFile == nullptr) return nullptr;		
 		
-		Texture newTexture{ newSurfaceFromFile };
-		return &newTexture;
-		
+		return new Texture{ newSurfaceFromFile };	
 	}
 
 	ColorRGB Texture::Sample(const Vector2& uv) const

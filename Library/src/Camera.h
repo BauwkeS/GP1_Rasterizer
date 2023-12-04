@@ -23,8 +23,8 @@ namespace dae
 
 
 		Vector3 origin{};
-		const float movementMouseSpeed{ 5.f };
-		const float movementKeySpeed{ 0.5f };
+		const float movementMouseSpeed{ 1.f };
+		const float movementKeySpeed{ 5.f };
 		float fovAngle{ 90.f };
 		float fov{ tanf((fovAngle * TO_RADIANS) / 2.f) };
 
