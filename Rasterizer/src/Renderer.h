@@ -17,6 +17,7 @@ namespace dae
 	class Timer;
 	class Scene;
 	struct Vertex_Out;
+	class Matrix;
 
 	struct BoundingBox
 	{
@@ -79,5 +80,10 @@ namespace dae
 		const int m_NumVertices{ 3 };
 
 		Texture* mp_Texture{};
+
+		Matrix m_WorldViewProjectionMatrix{};
+		Matrix m_WorldMatrix{};
+		//Matrix m_ViewMatrix{};
+		//Matrix m_ProjectionMatrix{};
 	};
 }

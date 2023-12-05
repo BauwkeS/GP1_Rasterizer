@@ -91,6 +91,7 @@ void dae::Renderer::VertexTransformationFunction(std::vector<Mesh>& meshes_World
 	int meshIdx{};
 	for (Mesh& mesh : meshes_World)
 	{
+		mesh.vertices_out.clear();
 		int numTrigs{ int(mesh.indices.size()) / m_NumVertices };
 		std::vector<Vertex_Out> meshVerts;
 		for (int trigIdx = 0; trigIdx < numTrigs; trigIdx++)
@@ -106,6 +107,7 @@ void dae::Renderer::VertexTransformationFunction(std::vector<Mesh>& meshes_World
 }
 void Renderer::VertexTransformationFunctionList(Mesh& mesh) const {
 	//what you had before just copy paste it bestie it was working
+	mesh.vertices_out.clear();
 	int numTrigs{ int(mesh.indices.size()) / m_NumVertices };
 	std::vector<Vertex_Out> meshVerts;
 	for (int trigIdx = 0; trigIdx < numTrigs; trigIdx++)
@@ -118,6 +120,7 @@ void Renderer::VertexTransformationFunctionList(Mesh& mesh) const {
 	}
 }
 void Renderer::VertexTransformationFunctionStrip(Mesh& mesh) const {
+	mesh.vertices_out.clear();
 	//just add the vertices here
 	for (int vertexIdx{}; vertexIdx < mesh.vertices.size(); vertexIdx++)
 	{
@@ -127,9 +130,22 @@ void Renderer::VertexTransformationFunctionStrip(Mesh& mesh) const {
 
 Vertex_Out dae::Renderer::VertexTransformationSingular(const dae::Vertex& vertexIn) const
 {
+	//normal
+	/*Vector4 vertexTotransform{ vertexIn.position.x,vertexIn.position.y,vertexIn.position.z,0 };
+	Vector4 vec{ m_Camera.viewMatrix.TransformPoint(vertexTotransform) };
+	const float aspectRatio{ float(m_Width) / float(m_Height) };
+	vec.x = (vec.x / vec.z) / (m_AspectRatio * m_Camera.fov);
+	vec.y = (vec.y / vec.z) / m_Camera.fov;
+
+	vec.x = ((vec.x + 1) / 2) * m_Width;
+	vec.y = ((1 - vec.y) / 2) * m_Height;
+	return Vertex_Out{ vec,vertexIn.color,vertexIn.uv };*/
+
+	//wiht matrixes
 	Vector4 vertexTotransform{ vertexIn.position.x,vertexIn.position.y,vertexIn.position.z,0 };
 	Vector4 vec{ m_Camera.viewMatrix.TransformPoint(vertexTotransform) };
 	const float aspectRatio{ float(m_Width) / float(m_Height) };
+	const float fov{ m_Camera.fov };
 	vec.x = (vec.x / vec.z) / (m_AspectRatio * m_Camera.fov);
 	vec.y = (vec.y / vec.z) / m_Camera.fov;
 
@@ -143,7 +159,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 {
 	//Initialize
 	SDL_GetWindowSize(pWindow, &m_Width, &m_Height);
-
+	 
 	//Create Buffers
 	m_pFrontBuffer = SDL_GetWindowSurface(pWindow);
 	m_pBackBuffer = SDL_CreateRGBSurface(0, m_Width, m_Height, 32, 0, 0, 0, 0);
@@ -221,6 +237,7 @@ void Renderer::Render()
 	SDL_LockSurface(m_pBackBuffer);
 	for (Mesh& mesh : m_MeshesWorld)
 	{
+		m_WorldMatrix = mesh.worldMatrix;
 		switch (mesh.primitiveTopology)
 		{
 		case dae::PrimitiveTopology::TriangleList: //first one
@@ -549,7 +566,6 @@ void Renderer::RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int b
 		const float crossResult{ Vector3::Cross(
 			Vector3{ vertixesInScreenSpace[((vertexIndex + 1) % numVertices) + indexOffset]->position }
 			- Vector3{ vertixesInScreenSpace[vertexIndex + indexOffset]->position },
-
 			pointP - vertixesInScreenSpace[vertexIndex + indexOffset]->position)
 			.z };
 
