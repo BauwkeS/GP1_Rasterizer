@@ -48,6 +48,7 @@ namespace dae
 		void VertexTransformationFunctionList(Mesh& mesh) const;
 		void VertexTransformationFunctionStrip(Mesh& mesh) const;
 		Vertex_Out VertexTransformationSingular(const dae::Vertex& vertexIn) const;
+		Vertex_Out VertexTransformationSingular(const dae::Vertex& vertexIn, Mesh& mesh) const;
 		std::vector<Vertex> ConvertToScreenSpaceVertex(const std::vector<Vertex>& vector) const;
 		void RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, std::vector<Vertex_Out>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const;
 		void RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, std::vector<Vertex_Out*>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const;
@@ -81,8 +82,8 @@ namespace dae
 
 		Texture* mp_Texture{};
 
-		Matrix m_WorldViewProjectionMatrix{};
-		Matrix m_WorldMatrix{};
+		//Matrix m_WorldViewProjectionMatrix{};
+		//Matrix m_WorldMatrix{};
 		//Matrix m_ViewMatrix{};
 		//Matrix m_ProjectionMatrix{};
 	};

@@ -40,12 +40,13 @@ namespace dae
 		Matrix viewMatrix{};
 		Matrix projectionMatrix{};
 
-		void Initialize(float _fovAngle = 90.f, Vector3 _origin = { 0.f,0.f,0.f })
+		void Initialize(float _fovAngle = 90.f, Vector3 _origin = { 0.f,0.f,0.f }, float _aspectRatio = 16.f/9.f)
 		{
 			fovAngle = _fovAngle;
 			fov = tanf((fovAngle * TO_RADIANS) / 2.f);
 
 			origin = _origin;
+			aspectRatio = _aspectRatio;
 		}
 
 		void CalculateViewMatrix()
@@ -70,7 +71,7 @@ namespace dae
 			float near{ 0.1f };
 
 			projectionMatrix = {
-				Vector4{1/aspectRatio,0,0,0},
+				Vector4{1/(aspectRatio*fov),0,0,0},
 				Vector4{0,1/fov,0,0},
 				Vector4{0,0,far/(far-near),1},
 				Vector4{0,0,(- (far - near))/(far-near),0}
