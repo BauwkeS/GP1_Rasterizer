@@ -40,7 +40,7 @@ namespace dae
 		int y{ int(uv.y * m_pSurface->h) };
 		Uint32 pixel{ Uint32(x + (y * m_pSurface->w)) };
 		Uint8 r{};
-		Uint8 g{};
+		Uint8 g{}; 
 		Uint8 b{};
 		SDL_GetRGB(m_pSurfacePixels[pixel], m_pSurface->format, &r, &g, &b);
 

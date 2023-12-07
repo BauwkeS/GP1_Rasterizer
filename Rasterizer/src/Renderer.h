@@ -27,6 +27,14 @@ namespace dae
 		int top;
 	};
 
+	struct HitResult
+	{
+		bool didHit;
+		ColorRGB color;
+		Vector2 uv;
+		double depth;
+	};
+
 	class Renderer final
 	{
 	public:
@@ -43,17 +51,14 @@ namespace dae
 
 		bool SaveBufferToImage() const;
 
-		void VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const;
-		void VertexTransformationFunction(std::vector<Mesh>& meshes_World) const;
-		void VertexTransformationFunctionList(Mesh& mesh) const;
+		void VertexTransformationFunction(Mesh& mesh) const;
+		/*void VertexTransformationFunctionList(Mesh& mesh) const;
 		void VertexTransformationFunctionStrip(Mesh& mesh) const;
-		Vertex_Out VertexTransformationSingular(const dae::Vertex& vertexIn) const;
 		Vertex_Out VertexTransformationSingular(const dae::Vertex& vertexIn, Mesh& mesh) const;
-		std::vector<Vertex> ConvertToScreenSpaceVertex(const std::vector<Vertex>& vector) const;
 		void RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, std::vector<Vertex_Out>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const;
 		void RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, std::vector<Vertex_Out*>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const;
 		void RenderItems(std::vector<Vertex_Out>& vertixesInScreenSpace);
-		void RenderItemsStrip(Mesh& mesh);	
+		void RenderItemsStrip(Mesh& mesh);	*/
 
 		void MakeBoundingBox(std::vector<Vertex_Out>& vertixesInScreenSpace, int& indexOffset, BoundingBox& boudingBox, int& boundingBoxWidth, int& boundingBoxHeight);
 		void MakeBoundingBox(std::vector<Vertex_Out*>& vertixesInScreenSpace, int& indexOffset, BoundingBox& boudingBox, int& boundingBoxWidth, int& boundingBoxHeight);
@@ -72,7 +77,8 @@ namespace dae
 		int m_Width{};
 		int m_Height{};
 
-		std::vector<Mesh> m_MeshesWorld{};
+		//std::vector<Mesh> m_MeshesWorld{};
+		Mesh m_Mesh{};
 		std::vector<Vertex_Out*> m_ListVertices;
 		//Mesh m_MeshesWorld2{};	
 
