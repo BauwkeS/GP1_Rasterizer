@@ -58,6 +58,30 @@ void dae::Renderer::VertexTransformationFunction(Mesh& mesh) const
 	}
 }
 
+void dae::Renderer::VertexTransformationFunction(std::vector<Mesh>& meshes) const
+{
+	for (Mesh& mesh : meshes)
+	{
+		mesh.vertices_out.clear();
+		mesh.vertices_out.reserve(mesh.vertices.size());
+		//just add the vertices here
+		for (int vertexIdx{}; vertexIdx < mesh.vertices.size(); vertexIdx++)
+		{
+			Vector4 vertexTotransform{ mesh.vertices[vertexIdx].position.x,mesh.vertices[vertexIdx].position.y,mesh.vertices[vertexIdx].position.z,1 };
+			Matrix worldViewProjectionMatrix = mesh.worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
+			Vector4 vec{ worldViewProjectionMatrix.TransformPoint(vertexTotransform) };
+
+			vec.x /= vec.w;
+			vec.y /= vec.w;
+			vec.z /= vec.w;
+
+			vec.x = ((vec.x + 1) / 2) * m_Width;
+			vec.y = ((1 - vec.y) / 2) * m_Height;
+			mesh.vertices_out.push_back(Vertex_Out{ vec,mesh.vertices[vertexIdx].color,mesh.vertices[vertexIdx].uv, mesh.vertices[vertexIdx].normal, mesh.vertices[vertexIdx].tangent });
+		}
+	}
+}
+
 //Vertex_Out dae::Renderer::VertexTransformationSingular(const dae::Vertex& vertexIn, Mesh& mesh) const {
 //	//wiht matrixes
 //	Vector4 vertexTotransform{ vertexIn.position.x,vertexIn.position.y,vertexIn.position.z,1 };

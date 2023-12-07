@@ -52,6 +52,7 @@ namespace dae
 		bool SaveBufferToImage() const;
 
 		void VertexTransformationFunction(Mesh& mesh) const;
+		void VertexTransformationFunction(std::vector<Mesh>& meshes) const;
 		/*void VertexTransformationFunctionList(Mesh& mesh) const;
 		void VertexTransformationFunctionStrip(Mesh& mesh) const;
 		Vertex_Out VertexTransformationSingular(const dae::Vertex& vertexIn, Mesh& mesh) const;
