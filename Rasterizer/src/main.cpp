@@ -67,8 +67,20 @@ int main(int argc, char* args[])
 			case SDL_KEYUP:
 				if (e.key.keysym.scancode == SDL_SCANCODE_X)
 					takeScreenshot = true;
+
+				/*) Toggle Depth Buffer(‘F4’)
+					- (Rendering)Toggle Rotation(Rotate / Idle) (‘F5’)
+					- (Rendering)Toggle Normal Mapping(On / Off) (‘F6’)
+					- (Rendering)Cycle Shading Mode(‘F7’)*/
+
 				if (e.key.keysym.scancode == SDL_SCANCODE_F4)
 					pRenderer->ToggleRenderMode();
+				if (e.key.keysym.scancode == SDL_SCANCODE_F5)
+					pRenderer->ToggleRotation();
+				if (e.key.keysym.scancode == SDL_SCANCODE_F6)
+					pRenderer->ToggleNormals();
+				if (e.key.keysym.scancode == SDL_SCANCODE_F7)
+					pRenderer->ToggleShadingMode();
 				break;
 			}
 		}

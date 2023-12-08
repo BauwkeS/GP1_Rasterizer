@@ -24,7 +24,7 @@ namespace dae
 
 		Vector3 origin{};
 		const float movementMouseSpeed{ 1.f };
-		const float movementKeySpeed{ 5.f };
+		const float movementKeySpeed{ 10.f };
 		float fovAngle{ 90.f };
 		float fov{ tanf((fovAngle * TO_RADIANS) / 2.f) };
 		float aspectRatio{16.f/9.f};
@@ -67,7 +67,7 @@ namespace dae
 		void CalculateProjectionMatrix()
 		{
 			//TODO W3
-			float far{ 1000.f };
+			float far{ 100.f };
 			float near{ 0.1f };
 
 			projectionMatrix = {

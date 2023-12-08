@@ -51,10 +51,14 @@ namespace dae
 
 		bool SaveBufferToImage() const;
 
-		//void VertexTransformationFunction(Mesh& mesh) const;
 		void VertexTransformationFunction(std::vector<Mesh>& meshes) const;
 
 		void ToggleRenderMode();
+		void ToggleRotation() { m_RotationEnabled = !m_RotationEnabled; }
+		void ToggleNormals();
+		void ToggleShadingMode();
+
+		ColorRGB PxelShading(Vertex_Out& vec);
 
 	private:
 		enum class RenderMode
@@ -62,7 +66,15 @@ namespace dae
 			FinalColor,
 			DepthBuffer
 		};
+		enum class ShadingMode
+		{
+			Combined,
+			ObservedArea,
+			Diffuse,		
+			Specular		
+		};
 		RenderMode m_CurrentRenderMode{ RenderMode::FinalColor };
+		ShadingMode m_CurrentShadingMode{ ShadingMode::Combined };
 
 		SDL_Window* m_pWindow{};
 
@@ -85,6 +97,14 @@ namespace dae
 		const int m_NumVertices{ 3 };
 
 		Texture* mp_Texture{};
+		Texture* mp_Normal{};
+		Texture* mp_Specular{};
+		Texture* mp_Gloss{};
 
+
+		bool m_NormalsEnabled{ true };
+
+		float m_CurrentMeshRotation{ 0.0f };
+		bool m_RotationEnabled{ true };
 	};
 }
