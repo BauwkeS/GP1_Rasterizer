@@ -51,10 +51,19 @@ namespace dae
 
 		bool SaveBufferToImage() const;
 
-		void VertexTransformationFunction(Mesh& mesh) const;
+		//void VertexTransformationFunction(Mesh& mesh) const;
 		void VertexTransformationFunction(std::vector<Mesh>& meshes) const;
 
+		void ToggleRenderMode();
+
 	private:
+		enum class RenderMode
+		{
+			FinalColor,
+			DepthBuffer
+		};
+		RenderMode m_CurrentRenderMode{ RenderMode::FinalColor };
+
 		SDL_Window* m_pWindow{};
 
 		SDL_Surface* m_pFrontBuffer{ nullptr };

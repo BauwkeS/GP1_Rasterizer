@@ -14,29 +14,6 @@
 
 using namespace dae;
 
-//void dae::Renderer::VertexTransformationFunction(Mesh& mesh) const
-//{
-//	Matrix worldViewProjectionMatrix = mesh.worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
-//	
-//	mesh.vertices_out.clear();
-//	mesh.vertices_out.reserve(mesh.vertices.size());
-//	//just add the vertices here
-//	for (int vertexIdx{}; vertexIdx < mesh.vertices.size(); vertexIdx++)
-//	{
-//		Vector4 vertexTotransform{ mesh.vertices[vertexIdx].position.x,mesh.vertices[vertexIdx].position.y,mesh.vertices[vertexIdx].position.z,1};
-//		Vector4 vec{ worldViewProjectionMatrix.TransformPoint(vertexTotransform) };
-//
-//		vec.x /= vec.w;
-//		vec.y /= vec.w;
-//		vec.z /= vec.w;
-//
-//		//convert to screenspace from NDC
-//		vec.x = ((vec.x + 1) / 2) * m_Width;
-//		vec.y = ((1 - vec.y) / 2) * m_Height;
-//		mesh.vertices_out.push_back(Vertex_Out{ vec,mesh.vertices[vertexIdx].color,mesh.vertices[vertexIdx].uv, mesh.vertices[vertexIdx].normal, mesh.vertices[vertexIdx].tangent});
-//	}
-//}
-
 void dae::Renderer::VertexTransformationFunction(std::vector<Mesh>& meshes) const
 {
 	for (Mesh& mesh : meshes) 
@@ -90,37 +67,41 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	//Initialize Camera
 	m_Camera.Initialize(60.f, { .0f,.0f,-10.f },float(m_Width) / m_Height);
 
-	m_MeshesWorld = {
-		Mesh{
-		{
-			Vertex{{-3.f,  3.f, -2.f},  {colors::White}, {0.f,0.f}},
-			Vertex{{ 0.f,  3.f, -2.f},  {colors::White}, {.5f,0.f}},
-			Vertex{{ 3.f,  3.f, -2.f},  {colors::White}, {1.f,0.f}},
-			Vertex{{-3.f,  0.f, -2.f},  {colors::White}, {0.f,.5f}},
-			Vertex{{ 0.f,  0.f, -2.f},  {colors::White}, {.5f,.5f}},
-			Vertex{{ 3.f,  0.f, -2.f},  {colors::White}, {1.f,.5f}},
-			Vertex{{-3.f, -3.f, -2.f},  {colors::White}, {0.f,1.f}},
-			Vertex{{ 0.f, -3.f, -2.f},  {colors::White}, {.5f,1.f}},
-			Vertex{{ 3.f, -3.f, -2.f},  {colors::White}, {1.f,1.f}}
-		},
-		//triangle list
-		/*{
-			3, 0, 1,    1, 4, 3,    4, 1, 2,
-			2, 5, 4,    6, 3, 4,    4, 7, 6,
-			7, 4, 5,    5, 8, 7
-		},
-		PrimitiveTopology::TriangleList}*/
-		//triangle strip
-		{
-			3, 0, 4, 1, 5, 2,
-			2, 6,
-			6, 3, 7, 4, 8, 5
-		},
-		PrimitiveTopology::TriangleStrip}
-	};
+	//m_MeshesWorld = {
+	//	Mesh{
+	//	{
+	//		Vertex{{-3.f,  3.f, -2.f},  {colors::White}, {0.f,0.f}},
+	//		Vertex{{ 0.f,  3.f, -2.f},  {colors::White}, {.5f,0.f}},
+	//		Vertex{{ 3.f,  3.f, -2.f},  {colors::White}, {1.f,0.f}},
+	//		Vertex{{-3.f,  0.f, -2.f},  {colors::White}, {0.f,.5f}},
+	//		Vertex{{ 0.f,  0.f, -2.f},  {colors::White}, {.5f,.5f}},
+	//		Vertex{{ 3.f,  0.f, -2.f},  {colors::White}, {1.f,.5f}},
+	//		Vertex{{-3.f, -3.f, -2.f},  {colors::White}, {0.f,1.f}},
+	//		Vertex{{ 0.f, -3.f, -2.f},  {colors::White}, {.5f,1.f}},
+	//		Vertex{{ 3.f, -3.f, -2.f},  {colors::White}, {1.f,1.f}}
+	//	},
+	//	//triangle list
+	//	/*{
+	//		3, 0, 1,    1, 4, 3,    4, 1, 2,
+	//		2, 5, 4,    6, 3, 4,    4, 7, 6,
+	//		7, 4, 5,    5, 8, 7
+	//	},
+	//	PrimitiveTopology::TriangleList}*/
+	//	//triangle strip
+	//	{
+	//		3, 0, 4, 1, 5, 2,
+	//		2, 6,
+	//		6, 3, 7, 4, 8, 5
+	//	},
+	//	PrimitiveTopology::TriangleStrip}
+	//};
 
+	//mp_Texture = Texture::LoadFromFile("C:/Users/bauwk/Documents/SCHOOL/GRAPHICSPROGRAMMING/GP1_Rasterizer/Rasterizer/Resources/uv_grid_2.png");
+	mp_Texture = Texture::LoadFromFile("./Resources/tuktuk.png");
 
-	mp_Texture = Texture::LoadFromFile("C:/Users/bauwk/Documents/SCHOOL/GRAPHICSPROGRAMMING/GP1_Rasterizer/Rasterizer/Resources/uv_grid_2.png");
+	Mesh& mesh = m_MeshesWorld.emplace_back(Mesh{});
+	Utils::ParseOBJ("Resources/tuktuk.obj", mesh.vertices, mesh.indices);
+	mesh.primitiveTopology = PrimitiveTopology::TriangleList;
 }
 
 Renderer::~Renderer()
@@ -250,9 +231,7 @@ void Renderer::Render()
 							float currentDepth = 1 / ((weight0 / vertex0Pos.w) + (weight1 / vertex1Pos.w) + (weight2 / vertex2Pos.w));
 
 							const int depthIndex{ px + (py * m_Width) };
-							float min{ .985f };
-							float max{ 1.f };
-							float depthBuffer{ (currentDepth - min) * (max - min) };
+							
 
 							// Check the depth buffer
 							if (currentDepth > m_pDepthBufferPixels[depthIndex])
@@ -263,11 +242,27 @@ void Renderer::Render()
 								(vertex2.uv * weight2 / vertex2Pos.w)
 							) * currentDepth };
 
-							//ColorRGB barycentricColor = { m_Mesh.vertices_out[indxVector0].color * weightA + m_Mesh.vertices_out[indxVector1].color * weightB + m_Mesh.vertices_out[indxVector2].color * weightC };
-							ColorRGB barycentricColor = mp_Texture->Sample(uvInterpolated);
-							
-							//ColorRGB barycentricColor = ColorRGB(depthBuffer, depthBuffer, depthBuffer);
+							ColorRGB barycentricColor{};
+							switch (m_CurrentRenderMode)
+							{
+								case dae::Renderer::RenderMode::FinalColor:
+								{
+									barycentricColor = mp_Texture->Sample(uvInterpolated);
+									break;
+								}
+								case dae::Renderer::RenderMode::DepthBuffer:
+								{
+									float min{ .985f };
+									float max{ 1.f };
+									float depthBuffer{ (currentDepth - min) * (max - min) };
 
+									barycentricColor = ColorRGB(depthBuffer, depthBuffer, depthBuffer);
+									break;
+								}
+							}
+
+							//ColorRGB barycentricColor = { m_Mesh.vertices_out[indxVector0].color * weightA + m_Mesh.vertices_out[indxVector1].color * weightB + m_Mesh.vertices_out[indxVector2].color * weightC };
+						
 							m_pDepthBufferPixels[depthIndex] = currentDepth;
 
 							//Update Color in Buffer
@@ -293,4 +288,11 @@ void Renderer::Render()
 bool Renderer::SaveBufferToImage() const
 {
 	return SDL_SaveBMP(m_pBackBuffer, "Rasterizer_ColorBuffer.bmp");
+}
+
+void dae::Renderer::ToggleRenderMode()
+{
+	int cntRenderModes = 2;
+	m_CurrentRenderMode = RenderMode(((int)m_CurrentRenderMode + 1) % cntRenderModes);
+
 }
