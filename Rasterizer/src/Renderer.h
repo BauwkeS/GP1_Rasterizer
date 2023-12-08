@@ -53,17 +53,7 @@ namespace dae
 
 		void VertexTransformationFunction(Mesh& mesh) const;
 		void VertexTransformationFunction(std::vector<Mesh>& meshes) const;
-		/*void VertexTransformationFunctionList(Mesh& mesh) const;
-		void VertexTransformationFunctionStrip(Mesh& mesh) const;
-		Vertex_Out VertexTransformationSingular(const dae::Vertex& vertexIn, Mesh& mesh) const;
-		void RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, std::vector<Vertex_Out>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const;
-		void RenderFunction(int pixelIdx, dae::BoundingBox& boundingBox, int boundingBoxHeight, const int& numVertices, std::vector<Vertex_Out*>& vertixesInScreenSpace, int indexOffset, float totalTriangleArea) const;
-		void RenderItems(std::vector<Vertex_Out>& vertixesInScreenSpace);
-		void RenderItemsStrip(Mesh& mesh);	*/
 
-		void MakeBoundingBox(std::vector<Vertex_Out>& vertixesInScreenSpace, int& indexOffset, BoundingBox& boudingBox, int& boundingBoxWidth, int& boundingBoxHeight);
-		void MakeBoundingBox(std::vector<Vertex_Out*>& vertixesInScreenSpace, int& indexOffset, BoundingBox& boudingBox, int& boundingBoxWidth, int& boundingBoxHeight);
-		
 	private:
 		SDL_Window* m_pWindow{};
 
@@ -78,10 +68,8 @@ namespace dae
 		int m_Width{};
 		int m_Height{};
 
-		//std::vector<Mesh> m_MeshesWorld{};
-		Mesh m_Mesh{};
-		std::vector<Vertex_Out*> m_ListVertices;
-		//Mesh m_MeshesWorld2{};	
+		std::vector<Mesh> m_MeshesWorld{};
+		//Mesh m_Mesh{};
 
 		float m_AspectRatio{};
 
@@ -89,9 +77,5 @@ namespace dae
 
 		Texture* mp_Texture{};
 
-		//Matrix m_WorldViewProjectionMatrix{};
-		//Matrix m_WorldMatrix{};
-		//Matrix m_ViewMatrix{};
-		//Matrix m_ProjectionMatrix{};
 	};
 }
