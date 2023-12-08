@@ -22,6 +22,7 @@ namespace dae
 		Vector3 normal{};
 		Vector3 tangent{};
 		//Vector3 viewDirection{};
+		bool valid{ true };
 	};
 
 	enum class PrimitiveTopology

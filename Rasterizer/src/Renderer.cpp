@@ -14,27 +14,28 @@
 
 using namespace dae;
 
-void dae::Renderer::VertexTransformationFunction(Mesh& mesh) const
-{
-	Matrix worldViewProjectionMatrix = mesh.worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
-	
-	mesh.vertices_out.clear();
-	mesh.vertices_out.reserve(mesh.vertices.size());
-	//just add the vertices here
-	for (int vertexIdx{}; vertexIdx < mesh.vertices.size(); vertexIdx++)
-	{
-		Vector4 vertexTotransform{ mesh.vertices[vertexIdx].position.x,mesh.vertices[vertexIdx].position.y,mesh.vertices[vertexIdx].position.z,1};
-		Vector4 vec{ worldViewProjectionMatrix.TransformPoint(vertexTotransform) };
-
-		vec.x /= vec.w;
-		vec.y /= vec.w;
-		vec.z /= vec.w;
-
-		vec.x = ((vec.x + 1) / 2) * m_Width;
-		vec.y = ((1 - vec.y) / 2) * m_Height;
-		mesh.vertices_out.push_back(Vertex_Out{ vec,mesh.vertices[vertexIdx].color,mesh.vertices[vertexIdx].uv, mesh.vertices[vertexIdx].normal, mesh.vertices[vertexIdx].tangent});
-	}
-}
+//void dae::Renderer::VertexTransformationFunction(Mesh& mesh) const
+//{
+//	Matrix worldViewProjectionMatrix = mesh.worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
+//	
+//	mesh.vertices_out.clear();
+//	mesh.vertices_out.reserve(mesh.vertices.size());
+//	//just add the vertices here
+//	for (int vertexIdx{}; vertexIdx < mesh.vertices.size(); vertexIdx++)
+//	{
+//		Vector4 vertexTotransform{ mesh.vertices[vertexIdx].position.x,mesh.vertices[vertexIdx].position.y,mesh.vertices[vertexIdx].position.z,1};
+//		Vector4 vec{ worldViewProjectionMatrix.TransformPoint(vertexTotransform) };
+//
+//		vec.x /= vec.w;
+//		vec.y /= vec.w;
+//		vec.z /= vec.w;
+//
+//		//convert to screenspace from NDC
+//		vec.x = ((vec.x + 1) / 2) * m_Width;
+//		vec.y = ((1 - vec.y) / 2) * m_Height;
+//		mesh.vertices_out.push_back(Vertex_Out{ vec,mesh.vertices[vertexIdx].color,mesh.vertices[vertexIdx].uv, mesh.vertices[vertexIdx].normal, mesh.vertices[vertexIdx].tangent});
+//	}
+//}
 
 void dae::Renderer::VertexTransformationFunction(std::vector<Mesh>& meshes) const
 {
@@ -49,14 +50,20 @@ void dae::Renderer::VertexTransformationFunction(std::vector<Mesh>& meshes) cons
 		{
 			Vector4 vertexTotransform{ mesh.vertices[vertexIdx].position.x,mesh.vertices[vertexIdx].position.y,mesh.vertices[vertexIdx].position.z,1 };
 			Vector4 vec{ worldViewProjectionMatrix.TransformPoint(vertexTotransform) };
+			bool stayValid = true;
 
 			vec.x /= vec.w;
 			vec.y /= vec.w;
 			vec.z /= vec.w;
+			// Do frustum culling
+			if (vec.z < 0.0f || vec.z > 1.0f
+				|| vec.x < -1.0f || vec.x > 1.0f
+				|| vec.y < -1.0f || vec.y > 1.0f)
+				stayValid = false;
 
 			vec.x = ((vec.x + 1) / 2) * m_Width;
 			vec.y = ((1 - vec.y) / 2) * m_Height;
-			mesh.vertices_out.push_back(Vertex_Out{ vec,mesh.vertices[vertexIdx].color,mesh.vertices[vertexIdx].uv, mesh.vertices[vertexIdx].normal, mesh.vertices[vertexIdx].tangent });
+			mesh.vertices_out.push_back(Vertex_Out{ vec,mesh.vertices[vertexIdx].color,mesh.vertices[vertexIdx].uv, mesh.vertices[vertexIdx].normal, mesh.vertices[vertexIdx].tangent,stayValid });
 		}
 	}
 }
@@ -129,14 +136,6 @@ void Renderer::Update(Timer* pTimer)
 
 void Renderer::Render()
 {
-	//for (Mesh& mesh : m_MeshesWorld)
-	//{
-	//}
-
-	//m_Mesh.vertices_out.clear();
-	//VertexTransformationFunction(m_MeshesWorld); -> old way of loading now
-	
-	
 	//@START
 	//Lock BackBuffer
 	SDL_LockSurface(m_pBackBuffer);
@@ -157,6 +156,7 @@ void Renderer::Render()
 				numTriangles = mesh.indices.size() - 2;
 				break;
 			}
+
 			for (int indiceIdx = 0; indiceIdx < numTriangles; ++indiceIdx)
 			{
 				uint32_t indxVector0{ };
@@ -187,40 +187,31 @@ void Renderer::Render()
 				const Vertex_Out vertex1{ mesh.vertices_out[indxVector1] };
 				const Vertex_Out vertex2{ mesh.vertices_out[indxVector2] };
 
-				//Bouding Box ---------------
 				const Vector4 vertex0Pos{ mesh.vertices_out[indxVector0].position };
 				const Vector4 vertex1Pos{ mesh.vertices_out[indxVector1].position };
 				const Vector4 vertex2Pos{ mesh.vertices_out[indxVector2].position };
 
+				if (!vertex0.valid || !vertex1.valid || !vertex2.valid)
+					continue;
+
+				//Bouding Box ---------------
 				const Vector3 edge10{ vertex1Pos - vertex0Pos };
 				const Vector3 edge21{ vertex2Pos - vertex1Pos };
 				const Vector3 edge02{ vertex0Pos - vertex2Pos };
 
 				int minX{ int(std::min(vertex0Pos.x, std::min(vertex1Pos.x, vertex2Pos.x))) };
 				int maxX{ int(std::max(vertex0Pos.x, std::max(vertex1Pos.x, vertex2Pos.x))) };
-
+				
 				int minY{ int(std::min(vertex0Pos.y, std::min(vertex1Pos.y, vertex2Pos.y))) };
 				int maxY{ int(std::max(vertex0Pos.y, std::max(vertex1Pos.y, vertex2Pos.y))) };
 
+				int buffer{ 2 };
 				//clamp so it does not go out of bounds
-				minX = Clamp(minX, 0, m_Width);
-				maxX = Clamp(maxX, 0, m_Width);
+				minX = Clamp(minX-buffer, 0, m_Width);
+				maxX = Clamp(maxX+buffer, 0, m_Width);
 
-				minY = Clamp(minY, 0, m_Height);
-				maxY = Clamp(maxY, 0, m_Height);
-
-				//buffer yo shit
-				if (minX < 0) continue;
-				else minX -= 1;
-
-				if (minY < 0) continue;
-				else minY -= 1;
-
-				if (maxX > m_Width) continue;
-				else maxX += 1;
-
-				if (maxY > m_Height) continue;
-				else maxY += 1;
+				minY = Clamp(minY-buffer, 0, m_Height);
+				maxY = Clamp(maxY+buffer, 0, m_Height);
 
 				//---------------
 
@@ -258,10 +249,13 @@ void Renderer::Render()
 							// interpolated depth
 							float currentDepth = 1 / ((weight0 / vertex0Pos.w) + (weight1 / vertex1Pos.w) + (weight2 / vertex2Pos.w));
 
-							int depthIndex{ px + (py * m_Width) };
+							const int depthIndex{ px + (py * m_Width) };
+							float min{ .985f };
+							float max{ 1.f };
+							float depthBuffer{ (currentDepth - min) * (max - min) };
 
 							// Check the depth buffer
-							if (currentDepth >= m_pDepthBufferPixels[depthIndex])
+							if (currentDepth > m_pDepthBufferPixels[depthIndex])
 								continue;
 							Vector2 uvInterpolated = { (
 								(vertex0.uv * weight0 / vertex0Pos.w) +
@@ -271,6 +265,8 @@ void Renderer::Render()
 
 							//ColorRGB barycentricColor = { m_Mesh.vertices_out[indxVector0].color * weightA + m_Mesh.vertices_out[indxVector1].color * weightB + m_Mesh.vertices_out[indxVector2].color * weightC };
 							ColorRGB barycentricColor = mp_Texture->Sample(uvInterpolated);
+							
+							//ColorRGB barycentricColor = ColorRGB(depthBuffer, depthBuffer, depthBuffer);
 
 							m_pDepthBufferPixels[depthIndex] = currentDepth;
 
