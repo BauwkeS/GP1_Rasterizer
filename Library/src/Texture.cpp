@@ -36,13 +36,11 @@ namespace dae
 	{
 		//TODO
 		//Sample the correct texel for the given uv
-		int x{ int(uv.x * m_pSurface->w) };
-		int y{ int(uv.y * m_pSurface->h) };
-		Uint32 pixel{ Uint32(x + (y * m_pSurface->w)) };
-		Uint8 r{};
-		Uint8 g{}; 
-		Uint8 b{};
-		SDL_GetRGB(m_pSurfacePixels[pixel], m_pSurface->format, &r, &g, &b);
+		int x{ static_cast<int>(uv.x * m_pSurface->w) };
+		int y{ static_cast<int>(uv.y * m_pSurface->h) };
+		uint32_t pixelIdx{ static_cast<uint32_t>(x + (y * m_pSurface->w)) };
+		uint8_t r{}, g{}, b{}; //don't ever do this with pointer types
+		SDL_GetRGB(m_pSurfacePixels[pixelIdx], m_pSurface->format, &r, &g, &b);
 
 		return { r / 255.f,g / 255.f,b / 255.f };
 	}

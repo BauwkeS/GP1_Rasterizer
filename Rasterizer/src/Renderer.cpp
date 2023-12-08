@@ -39,13 +39,14 @@ using namespace dae;
 
 void dae::Renderer::VertexTransformationFunction(Mesh& mesh) const
 {
+	Matrix worldViewProjectionMatrix = mesh.worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
+	
 	mesh.vertices_out.clear();
 	mesh.vertices_out.reserve(mesh.vertices.size());
 	//just add the vertices here
 	for (int vertexIdx{}; vertexIdx < mesh.vertices.size(); vertexIdx++)
 	{
 		Vector4 vertexTotransform{ mesh.vertices[vertexIdx].position.x,mesh.vertices[vertexIdx].position.y,mesh.vertices[vertexIdx].position.z,1};
-		Matrix worldViewProjectionMatrix = mesh.worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
 		Vector4 vec{ worldViewProjectionMatrix.TransformPoint(vertexTotransform) };
 
 		vec.x /= vec.w;
@@ -60,15 +61,16 @@ void dae::Renderer::VertexTransformationFunction(Mesh& mesh) const
 
 void dae::Renderer::VertexTransformationFunction(std::vector<Mesh>& meshes) const
 {
-	for (Mesh& mesh : meshes)
+	for (Mesh& mesh : meshes) 
 	{
+		Matrix worldViewProjectionMatrix = mesh.worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
+
 		mesh.vertices_out.clear();
 		mesh.vertices_out.reserve(mesh.vertices.size());
 		//just add the vertices here
 		for (int vertexIdx{}; vertexIdx < mesh.vertices.size(); vertexIdx++)
 		{
 			Vector4 vertexTotransform{ mesh.vertices[vertexIdx].position.x,mesh.vertices[vertexIdx].position.y,mesh.vertices[vertexIdx].position.z,1 };
-			Matrix worldViewProjectionMatrix = mesh.worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
 			Vector4 vec{ worldViewProjectionMatrix.TransformPoint(vertexTotransform) };
 
 			vec.x /= vec.w;
@@ -178,25 +180,14 @@ void Renderer::Render()
 	//@START
 	//Lock BackBuffer
 	SDL_LockSurface(m_pBackBuffer);
-	//for (Mesh& mesh : m_MeshesWorld) //OLD STUFF BESTIE PLS FIX YO SHIT
-	//{
-	//	switch (mesh.primitiveTopology)
-	//	{
-	//	case dae::PrimitiveTopology::TriangleList: //first one
-	//		VertexTransformationFunctionList(mesh);
-	//		RenderItems(mesh.vertices_out);
-	//		break;
-	//	case dae::PrimitiveTopology::TriangleStrip: //second one
-	//		VertexTransformationFunctionStrip(mesh);
-	//		RenderItemsStrip(mesh);
-	//		break;
-	//	}
-	//}
-	
+	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, FLT_MAX);
+	SDL_FillRect(m_pBackBuffer, &m_pBackBuffer->clip_rect, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100)); //clear screen
 
 	/*for (Mesh& mesh : m_MeshesWorld)
 	{
-		*/VertexTransformationFunction(m_Mesh);
+		*/
+	
+	VertexTransformationFunction(m_Mesh);
 
 		int numTriangles{};
 		switch (m_Mesh.primitiveTopology)
@@ -208,51 +199,90 @@ void Renderer::Render()
 			numTriangles = m_Mesh.indices.size() - 2;
 			break;
 		}
+		//for (int loopOverTrigIndx = 0; loopOverTrigIndx < numTriangles; loopOverTrigIndx++)
+		//{
+		//	int indxVector0{};
+		//	int indxVector1{};
+		//	int indxVector2{};
+		//	switch (m_Mesh.primitiveTopology)
+		//	{
+		//	case PrimitiveTopology::TriangleList:
+		//		indxVector0 = m_Mesh.indices[loopOverTrigIndx * 3];
+		//		indxVector1 = m_Mesh.indices[loopOverTrigIndx * 3 + 1];
+		//		indxVector2 = m_Mesh.indices[loopOverTrigIndx * 3 + 2];
+		//		break;
+		//	case PrimitiveTopology::TriangleStrip:
+		//		indxVector0 = m_Mesh.indices[loopOverTrigIndx];
+		//		indxVector1 = m_Mesh.indices[loopOverTrigIndx + 1];
+		//		indxVector2 = m_Mesh.indices[loopOverTrigIndx + 2];
+		//		if (loopOverTrigIndx % 2 == 1)
+		//		{
+		//			std::swap(indxVector1, indxVector2);
+		//			//Considering if it’s an odd or even triangle if
+		//			//using the triangle strip technique.Hint: odd or even ? -> modulo or bit masking
+		//		}
+		//		if (indxVector0 == indxVector1 || indxVector1 == indxVector2 || indxVector2 == indxVector0) //triangles with no area begone
+		//		{
+		//			continue;
+		//		}
+		//	}
 
-		for (int loopOverTrigIndx = 0; loopOverTrigIndx < numTriangles; loopOverTrigIndx++)
-		{
-			int indxVector0{};
-			int indxVector1{};
-			int indxVector2{};
+		/*	int increment = 3;
+			if (m_Mesh.primitiveTopology == PrimitiveTopology::TriangleStrip)
+				increment = 1;*/
 
-			switch (m_Mesh.primitiveTopology)
+			for (int indiceIdx = 0; indiceIdx < numTriangles; ++indiceIdx)
 			{
-			case PrimitiveTopology::TriangleList:
-				indxVector0 = m_Mesh.indices[loopOverTrigIndx * 3];
-				indxVector1 = m_Mesh.indices[loopOverTrigIndx * 3 + 1];
-				indxVector2 = m_Mesh.indices[loopOverTrigIndx * 3 + 2];
-				break;
-			case PrimitiveTopology::TriangleStrip:
-				indxVector0 = m_Mesh.indices[loopOverTrigIndx];
-				indxVector1 = m_Mesh.indices[loopOverTrigIndx + 1];
-				indxVector2 = m_Mesh.indices[loopOverTrigIndx + 2];
+				/*uint32_t indxVector0{ m_Mesh.indices[indiceIdx] };
+				uint32_t indxVector1{ m_Mesh.indices[indiceIdx + 1] };
+				uint32_t indxVector2{ m_Mesh.indices[indiceIdx + 2] };*/
+				uint32_t indxVector0{ };
+				uint32_t indxVector1{ };
+				uint32_t indxVector2{ };
 
-				if (loopOverTrigIndx % 2 == 1)
+				// swap those middle ones bestie
+
+				switch (m_Mesh.primitiveTopology)
 				{
-					std::swap(indxVector1, indxVector2);
-					//Considering if it’s an odd or even triangle if
-					//using the triangle strip technique.Hint: odd or even ? -> modulo or bit masking
+				case PrimitiveTopology::TriangleList:
+					indxVector0 = m_Mesh.indices[indiceIdx * 3];
+					indxVector1 = m_Mesh.indices[indiceIdx * 3 + 1];
+					indxVector2 = m_Mesh.indices[indiceIdx * 3 + 2];
+					break;
+				case PrimitiveTopology::TriangleStrip:
+					indxVector0 = m_Mesh.indices[indiceIdx];
+					indxVector1 = m_Mesh.indices[indiceIdx + 1];
+					indxVector2 = m_Mesh.indices[indiceIdx + 2];
+					if (indiceIdx % 2 == 1)
+					{
+						std::swap(indxVector1, indxVector2); //make every other triangle rotate the other way
+					}
+
+					// not a triangle so skip
+					if (indxVector0 == indxVector1 || indxVector2 == indxVector0 || indxVector1 == indxVector2)
+						continue;
 				}
 
-				if (indxVector0 == indxVector1 || indxVector1 == indxVector2 || indxVector2 == indxVector0) //triangles with no area begone
-				{
-					continue;
-				}
-			}
-
+				const Vertex_Out vertex0{ m_Mesh.vertices_out[indxVector0] };
+				const Vertex_Out vertex1{ m_Mesh.vertices_out[indxVector1] };
+				const Vertex_Out vertex2{ m_Mesh.vertices_out[indxVector2] };
 
 			//Bouding Box ---------------
-			Vector3 vertexPos0{ m_Mesh.vertices_out[indxVector0].position }; 
-			Vector3 vertexPos1{ m_Mesh.vertices_out[indxVector1].position };
-			Vector3 vertexPos2{ m_Mesh.vertices_out[indxVector2].position };
+			const Vector4 vertex0Pos{ m_Mesh.vertices_out[indxVector0].position }; 
+			const Vector4 vertex1Pos{ m_Mesh.vertices_out[indxVector1].position };
+			const Vector4 vertex2Pos{ m_Mesh.vertices_out[indxVector2].position };
 
-			int minX{ int(std::min(vertexPos0.x, std::min(vertexPos1.x, vertexPos2.x))) };
-			int maxX{ int(std::max(vertexPos0.x, std::max(vertexPos1.x, vertexPos2.x))) };
+			const Vector3 edge10{ vertex1Pos - vertex0Pos };
+			const Vector3 edge21{ vertex2Pos - vertex1Pos };
+			const Vector3 edge02{ vertex0Pos - vertex2Pos };
 
-			int minY{ int(std::min(vertexPos0.y, std::min(vertexPos1.y, vertexPos2.y))) };
-			int maxY{ int(std::max(vertexPos0.y, std::max(vertexPos1.y, vertexPos2.y))) };
+			int minX{ int(std::min(vertex0Pos.x, std::min(vertex1Pos.x, vertex2Pos.x))) };
+			int maxX{ int(std::max(vertex0Pos.x, std::max(vertex1Pos.x, vertex2Pos.x))) };
 
-			if (minX < 0) continue;
+			int minY{ int(std::min(vertex0Pos.y, std::min(vertex1Pos.y, vertex2Pos.y))) };
+			int maxY{ int(std::max(vertex0Pos.y, std::max(vertex1Pos.y, vertex2Pos.y))) };
+
+			/*if (minX < 0) continue;
 			else minX -= 1;
 			
 			if (minY < 0) continue;
@@ -262,46 +292,34 @@ void Renderer::Render()
 			else maxX += 1;
 
 			if (maxY > m_Height) continue;
-			else maxY += 1;
-
-			/*if (minX < 0) minX = 0;
-			else minX -= 1;
-			if (minY < 0) minY = 0;
-			else minY -= 1;
-
-			if (maxX > m_Width) maxX = m_Width;
-			else maxX += 1;
-			if (maxY > m_Height) maxY = m_Height;
 			else maxY += 1;*/
 
-			/*minX = std::min(minX, m_Width - 1);
-			minX = std::max(minX, 0);
+			//clamp so it does not go out of bounds
+			minX = Clamp(minX, 0, m_Width);
+			maxX = Clamp(maxX, 0, m_Width);
 
-			minY = std::min(minY, m_Height - 1);
-			minY = std::max(minY, 0);
+			minY = Clamp(minY, 0, m_Height);
+			maxY = Clamp(maxY, 0, m_Height);
 
-			maxX = std::min(maxX, m_Width - 1);
-			maxX = std::max(maxX, 0);
+			if (minX < 0) continue;
+			else minX -= 1;
 
-			maxY = std::min(maxY, m_Height - 1);
-			maxY = std::max(maxY, 0);*/
+			if (minY < 0) continue;
+			else minY -= 1;
 
-			int buffer{ 2 };
-			BoundingBox boundingBox{ minX, minY, maxX, maxY };
-			int boundingBoxWidth{ maxX - minX + buffer };
-			int boundingBoxHeight{ maxY - minY + buffer };
+			if (maxX > m_Width) continue;
+			else maxX += 1;
+
+			if (maxY > m_Height) continue;
+			else maxY += 1;
+
+			//int buffer{ 2 };
+			//BoundingBox boundingBox{ minX, minY, maxX, maxY };
+			//int boundingBoxWidth{ maxX - minX + buffer };
+			//int boundingBoxHeight{ maxY - minY + buffer };
 
 			//---------------
 
-			//int pixels{ boundingBoxWidth * boundingBoxHeight };
-			//std::vector<int> pixleIndices{};
-
-
-			//pixleIndices.reserve(pixels);
-
-		//	for (int index = 0; index < pixels; index++) pixleIndices.emplace_back(index);
-
-			/*std::for_each(std::execution::par, pixleIndices.begin(), pixleIndices.end(), [&](int i) {*/
 			for (int px{ minX }; px < maxX; ++px)
 			{
 				if (px < 0) continue;
@@ -310,159 +328,71 @@ void Renderer::Render()
 				{
 					if (py < 0) continue;
 
-					ColorRGB barycentricColor{}; //color to put on triangle
-					//bool inTriangle{ true }; //you finally made the bool to easy check
-					//float currentDepth{}; //to check with buffer
-				//	Vector2 uvTexture{}; //uv to give pos to -> to give to texture to know which color it is
-					//RENDER LOGIC
-					//for (int px{ boundingBox.left }; px < boundingBox.right; ++px)
-					//{
-					//	if (px < 0) continue;
+					const Vector3 pointP{ px + 0.5f, py + 0.5f,0.f };
 
-					//	for (int py{ boundingBox.bottom }; py < boundingBox.top; ++py)
-					//	{
-			/*		int px{ boundingBox.left + (int(pixelIdx) / boundingBoxHeight) };
-					int py{ boundingBox.bottom + (int(pixelIdx) % boundingBoxHeight) };*/
-					const Vector3 pointP{ px + 0.5f, py + 0.5f,1.f };
-
-					/*if (pointP.x < minX || pointP.x > maxX ||
-					pointP.y < minY || pointP.y > maxY)
-					{
-					continue;
-					}*/
-
-					Vertex_Out vertexCheckV0{ m_Mesh.vertices_out[indxVector0] };
+					/*Vertex_Out vertexCheckV0{ m_Mesh.vertices_out[indxVector0] };
 					Vertex_Out vertexCheckV1{ m_Mesh.vertices_out[indxVector1] };
-					Vertex_Out vertexCheckV2{ m_Mesh.vertices_out[indxVector2] };
+					Vertex_Out vertexCheckV2{ m_Mesh.vertices_out[indxVector2] };*/
 
-					int indexOffset{ m_NumVertices * loopOverTrigIndx };
+					//signed areas of all adges to check if it is in a triangle after
+					/*const Vector3 signedAreaParallelogram12{ Vector3::Cross(edge21.GetXY(), Vector2{ vertex1Pos.GetXY(), pointP }) };
+					const Vector3 signedAreaParallelogram01{ Vector3::Cross(edge10.GetXY(), Vector2{vertex0Pos.GetXY(), pointP})};
+					const Vector3 signedAreaParallelogram20{ Vector3::Cross(edge02.GetXY(), Vector2{ vertex2Pos.GetXY(), pointP }) };
+					const float triangleArea = Vector2::Cross(edge10.GetXY(), -edge02.GetXY());*/
+					
+					const Vector3 signedAreaParallelogram12{ Vector3::Cross(edge21, pointP - vertex1Pos) };
+					const Vector3 signedAreaParallelogram20{ Vector3::Cross(edge02, pointP - vertex2Pos) };
+					const Vector3 signedAreaParallelogram01{ Vector3::Cross(edge10, pointP - vertex0Pos) };
+					const float triangleArea = signedAreaParallelogram12.z + signedAreaParallelogram20.z + signedAreaParallelogram01.z;
 
-					Vector3 p{ pointP.x, pointP.y, 0.f };
-					//Vector3 v0P{ p - (*vertices[0]).position }; //v0 to point, also very yummy syntax to prevent a copy
-					Vector3 v0P{ p - vertexCheckV0.position };
+					bool isInsideTriangle = true;
+					isInsideTriangle &= signedAreaParallelogram01.z >= 0.0f;
+					isInsideTriangle &= signedAreaParallelogram20.z >= 0.0f;
+					isInsideTriangle &= signedAreaParallelogram12.z >= 0.0f;
 
-					Vector3 edge0{ vertexCheckV1.position - vertexCheckV0.position };
-					Vector3 edge1{ vertexCheckV2.position - vertexCheckV1.position };
-					Vector3 edge2{ vertexCheckV0.position - vertexCheckV2.position };
+					if (isInsideTriangle) {
+						// weights
+						const float weight0{ signedAreaParallelogram12.z / triangleArea };
+						const float weight1{ signedAreaParallelogram20.z / triangleArea };
+						const float weight2{ signedAreaParallelogram01.z / triangleArea };
 
-					HitResult hitResult{};
-
-					float v0PxE0{ v0P.x * edge0.y - v0P.y * edge0.x }; 
-					if (v0PxE0 >= 0) { hitResult = { false, ColorRGB{}, Vector2{}, 0 }; continue; }
-
-					Vector3 v1P{ Vector3(pointP.x, pointP.y, 0.f) - vertexCheckV1.position };
-					float v1PxE1{ v1P.x * edge1.y - v1P.y * edge1.x };
-					if (v1PxE1 >= 0) { hitResult = { false, ColorRGB{}, Vector2{}, 0 }; continue; }
-
-					float v0PxE2{ v0P.x * edge2.y - v0P.y * edge2.x }; 
-					if (v0PxE2 >= 0) { hitResult = { false, ColorRGB{}, Vector2{}, 0 }; continue; }
-
-						
-					ColorRGB colorHit{};
-					Vector2 uvHit{};
-					float depthHit{};
-					float w0 = v1PxE1; //copy to have new names which are more fitting HERE cause jesus christ
-					float w1 = v0PxE2;
-					float w2 = v0PxE0;
-
-					float totalWeight{ w0 + w1 + w2 };
-					w0 /= totalWeight;
-					w1 /= totalWeight;
-					w2 /= totalWeight;
-
-					float zInterpolated{ 1 / (
-						(w0 / vertexCheckV0.position.w) +
-						(w1 / vertexCheckV1.position.w) +
-						(w2 / vertexCheckV2.position.w)) };
-
-					colorHit = { vertexCheckV0.color * w0 + vertexCheckV1.color * w1 + vertexCheckV2.color * w2 };
-
-					uvHit = {
-						(
-							(vertexCheckV0.uv * w0 / vertexCheckV0.position.w) +
-							(vertexCheckV1.uv * w1 / vertexCheckV1.position.w) +
-							(vertexCheckV2.uv * w2 / vertexCheckV2.position.w)
-						) * zInterpolated };
-					//depth = w0 * v0.position.z + w1 * v1.position.z + w2 * v2.position.z;
-					depthHit = zInterpolated;
-
-					hitResult ={ true, colorHit, uvHit, depthHit };
-					if (hitResult.depth <= 0) continue;
+						// check to seeif the weight is correct bc this breaks 24/7 pls
+						assert((weight0 + weight1 + weight2) > 0.99f);
+						assert((weight0 + weight1 + weight2) < 1.01f);
 
 
-					//for (int vertexIndex{ 0 }; vertexIndex < m_NumVertices; vertexIndex++)
-					//{
-					//	//calculate if you are inside the triangle you are making
-					//	const float crossResult{ Vector3::Cross(
-					//		Vector3{ mesh.vertices_out[((vertexIndex + 1) % m_NumVertices) + indexOffset].position }
-					//		- Vector3{ mesh.vertices_out[vertexIndex + indexOffset].position },
-					//		pointP - mesh.vertices_out[vertexIndex + indexOffset].position)
-					//		.z };
+						// interpolated depth
+						float currentDepth = 1/ ((weight0 /vertex0Pos.w) + (weight1 / vertex1Pos.w) + (weight2 / vertex2Pos.w));
 
-					//	if (crossResult < 0)
-					//	{
-					//		inTriangle = false;
-					//		break;
-					//	}
+						int depthIndex{ px + (py * m_Width) };
 
-					//	Vector3 vec1 = (mesh.vertices_out[indexOffset].position - mesh.vertices_out[indexOffset + 1].position);
-					//	Vector3 vec2 = Vector3(mesh.vertices_out[indexOffset].position - mesh.vertices_out[indexOffset + 2].position);
-					//	float totalTriangleArea{ Vector3::Cross(vec1,vec2).z * 0.5f };
-
-					//	//add color and depth to the pixel
-					//	barycentricColor += mesh.vertices_out[((vertexIndex + 2) % m_NumVertices + indexOffset)].color * ((crossResult * 0.5f) / totalTriangleArea);
-					//	currentDepth += 1 / mesh.vertices_out[((vertexIndex + 2) % m_NumVertices + indexOffset)].position.z * ((crossResult * 0.5f) / totalTriangleArea);
-					//	
-					//	uvTexture += (mesh.vertices_out[((vertexIndex + 2) % m_NumVertices)].uv / mesh.vertices_out[((vertexIndex + 2) % m_NumVertices)].position.z)
-					//		* ((crossResult * 0.5f) / totalTriangleArea);
-
-					//}
-					if (hitResult.didHit) {
-
-						/*float min{ .985f };
-						float max{ 1.f };
-						float depthBuffer{ (currentDepth - min) * (max - min) };*/
-
-						//currentDepth = 1 / currentDepth;
-					//	uvTexture *= currentDepth;
-
-						int pixelIdx{ px + (py * m_Width) };
-
-						if (hitResult.depth >= m_pDepthBufferPixels[pixelIdx])
-						{
+						// Check the depth buffer
+						if (currentDepth >= m_pDepthBufferPixels[depthIndex])
 							continue;
-						}
 
-					/*	if (m_pDepthBufferPixels[pixelIdx] >= currentDepth)
-						{
-							
-						}*/
 
+						//m_pDepthBufferPixels[px + (py * m_Width)] = currentDepth;
+
+						Vector2 uvInterpolated = {(
+							(vertex0.uv * weight0 / vertex0Pos.w) +
+							(vertex1.uv * weight1 / vertex1Pos.w) +
+							(vertex2.uv * weight2 / vertex2Pos.w)
+						) * currentDepth };
+
+						//ColorRGB barycentricColor = { m_Mesh.vertices_out[indxVector0].color * weightA + m_Mesh.vertices_out[indxVector1].color * weightB + m_Mesh.vertices_out[indxVector2].color * weightC };
+						ColorRGB barycentricColor = mp_Texture->Sample(uvInterpolated);
+
+						m_pDepthBufferPixels[depthIndex] = currentDepth;
 
 						//Update Color in Buffer
-							/*if (m_isDepthBuffer)
-							{
-								barycentricColor = ColorRGB{ depthBuffer,depthBuffer,depthBuffer };
-							}
-							else
-							{*/
-						barycentricColor = mp_Texture->Sample(hitResult.uv);
-						//}
-						m_pDepthBufferPixels[pixelIdx] = int(hitResult.depth);
-
 						barycentricColor.MaxToOne();
-
-						m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pFrontBuffer->format,
+						m_pBackBufferPixels[depthIndex] = SDL_MapRGB(m_pBackBuffer->format,
 							static_cast<uint8_t>(barycentricColor.r * 255),
 							static_cast<uint8_t>(barycentricColor.g * 255),
 							static_cast<uint8_t>(barycentricColor.b * 255));
 					}
 				}
-				}
-
-			//Renderfunction
-
-		//}
+			}
 
 	}
 
@@ -533,52 +463,52 @@ void Renderer::Render()
 //	}
 //}
 //
-void dae::Renderer::MakeBoundingBox(std::vector<Vertex_Out*>& vertixesInScreenSpace, int& indexOffset, BoundingBox& boudingBox, int& boundingBoxWidth, int& boundingBoxHeight) {
-	/*	int minX{};
-		int maxX{};
-		int minY{};
-		int maxY{};*/
-
-		//for (int vertexId = 0; vertexId < numVertices; vertexId++) {
-	Vector3 vertexPos0{ vertixesInScreenSpace[indexOffset]->position }; // vertixesInScreenSpace => Vertex_Out*
-	Vector3 vertexPos1{ vertixesInScreenSpace[indexOffset + 1]->position };
-	Vector3 vertexPos2{ vertixesInScreenSpace[indexOffset + 2]->position };
-
-	int minX{ int(std::min(vertexPos0.x, std::min(vertexPos1.x, vertexPos2.x))) };
-	int maxX{ int(std::max(vertexPos0.x, std::max(vertexPos1.x, vertexPos2.x))) };
-
-	int minY{ int(std::min(vertexPos0.y, std::min(vertexPos1.y, vertexPos2.y))) };
-	int maxY{ int(std::max(vertexPos0.y, std::max(vertexPos1.y, vertexPos2.y))) };
-	//}
-
-	/*if (minX < 0) minX = 0;
-	else minX -= 1;
-	if (minY < 0) minY = 0;
-	else minY -= 1;
-
-	if (maxX > m_Width) maxX = m_Width;
-	else maxX += 1;
-	if (maxY > m_Height) maxY = m_Height;
-	else maxY += 1;*/
-	                                        
-	minX = std::min(minX, m_Width - 1);
-	minX = std::max(minX, 0);
-
-	minY = std::min(minY, m_Height - 1);
-	minY = std::max(minY, 0);
-
-	maxX = std::min(maxX, m_Width - 1);
-	maxX = std::max(maxX, 0);
-
-	maxY = std::min(maxY, m_Height - 1);
-	maxY = std::max(maxY, 0);
-
-	int buffer{ 2 };
-	boudingBox = BoundingBox{ minX, minY, maxX, maxY };
-	boundingBoxWidth = int{ maxX - minX + buffer };
-	boundingBoxHeight = int{ maxY - minY + buffer };
-
-	ColorRGB barycentricColor{}; //color to put on triangle
+//void dae::Renderer::MakeBoundingBox(std::vector<Vertex_Out*>& vertixesInScreenSpace, int& indexOffset, BoundingBox& boudingBox, int& boundingBoxWidth, int& boundingBoxHeight) {
+//	/*	int minX{};
+//		int maxX{};
+//		int minY{};
+//		int maxY{};*/
+//
+//		//for (int vertexId = 0; vertexId < numVertices; vertexId++) {
+//	Vector3 vertexPos0{ vertixesInScreenSpace[indexOffset]->position }; // vertixesInScreenSpace => Vertex_Out*
+//	Vector3 vertexPos1{ vertixesInScreenSpace[indexOffset + 1]->position };
+//	Vector3 vertexPos2{ vertixesInScreenSpace[indexOffset + 2]->position };
+//
+//	int minX{ int(std::min(vertexPos0.x, std::min(vertexPos1.x, vertexPos2.x))) };
+//	int maxX{ int(std::max(vertexPos0.x, std::max(vertexPos1.x, vertexPos2.x))) };
+//
+//	int minY{ int(std::min(vertexPos0.y, std::min(vertexPos1.y, vertexPos2.y))) };
+//	int maxY{ int(std::max(vertexPos0.y, std::max(vertexPos1.y, vertexPos2.y))) };
+//	//}
+//
+//	/*if (minX < 0) minX = 0;
+//	else minX -= 1;
+//	if (minY < 0) minY = 0;
+//	else minY -= 1;
+//
+//	if (maxX > m_Width) maxX = m_Width;
+//	else maxX += 1;
+//	if (maxY > m_Height) maxY = m_Height;
+//	else maxY += 1;*/
+//	                                        
+//	minX = std::min(minX, m_Width - 1);
+//	minX = std::max(minX, 0);
+//
+//	minY = std::min(minY, m_Height - 1);
+//	minY = std::max(minY, 0);
+//
+//	maxX = std::min(maxX, m_Width - 1);
+//	maxX = std::max(maxX, 0);
+//
+//	maxY = std::min(maxY, m_Height - 1);
+//	maxY = std::max(maxY, 0);
+//
+//	int buffer{ 2 };
+//	boudingBox = BoundingBox{ minX, minY, maxX, maxY };
+//	boundingBoxWidth = int{ maxX - minX + buffer };
+//	boundingBoxHeight = int{ maxY - minY + buffer };
+//
+//	ColorRGB barycentricColor{}; //color to put on triangle
 //	bool inTriangle{ true }; //you finally made the bool to easy check
 //	float currentDepth{}; //to check with buffer
 //	Vector2 uvTexture{}; //uv to give pos to -> to give to texture to know which color it is
@@ -655,8 +585,8 @@ void dae::Renderer::MakeBoundingBox(std::vector<Vertex_Out*>& vertixesInScreenSp
 //				static_cast<uint8_t>(barycentricColor.b * 255));
 //		}
 //	}
-
-}
+//
+//}
 //
 //void dae::Renderer::MakeBoundingBox(std::vector<Vertex_Out>& vertixesInScreenSpace, int& indexOffset, BoundingBox& boundingBox, int& boundingBoxWidth, int& boundingBoxHeight) {
 //	

@@ -74,7 +74,7 @@ namespace dae
 				Vector4{1/(aspectRatio*fov),0,0,0},
 				Vector4{0,1/fov,0,0},
 				Vector4{0,0,far/(far-near),1},
-				Vector4{0,0,(- (far - near))/(far-near),0}
+				Vector4{0,0,(- (far * near))/(far-near),0}
 			};
 
 			//ProjectionMatrix => Matrix::CreatePerspectiveFovLH(...) [not implemented yet]
